@@ -40,7 +40,7 @@ namespace KBEngine{ namespace script{
 
 #define APPEND_PYSYSPATH(PY_PATHS)									\
 	std::string venvPath = Resmgr::getSingleton().getEnv().venv_path; \
-	if (venvPath != ""){ PY_PATHS +=  strutil::to_wide_string(venvPath); } \
+	if (venvPath != ""){ PY_PATHS +=  strutil::to_wide_string(venvPath); PY_PATHS += L";";} \
 	std::wstring pySysPaths = SCRIPT_PATH;							\
 	wchar_t* pwpySysResPath = strutil::char2wchar(const_cast<char*>(Resmgr::getSingleton().getPySysResPath().c_str()));	\
 	strutil::kbe_replace(pySysPaths, L"../../res/", pwpySysResPath);\
