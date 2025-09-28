@@ -166,7 +166,7 @@ public:
 				if(ctype != _componentType || cid != _cid)
 				{
 					ERROR_MSG(fmt::format("LookAppTask::process: invalid component(ctype={}, cid={}).\n",
-						ctype, cid));
+						static_cast<int>(ctype), cid));
 
 					return false;
 				}
