@@ -195,7 +195,7 @@ bool Interfaces::initializeEnd()
 
 	ScriptTimers* pTimers = &asyncTimerTimers_;
 	AsyncTimerHandler* handler = new AsyncTimerHandler(pTimers, submitFunc);
-	ScriptTimersUtil::addTimer(&pTimers, 0.1f, 0.1f, 0, handler);
+	ScriptTimersUtil::addTimer(&pTimers, 0.1f, g_kbeSrvConfig.asyncioRepeatOffset(), 0, handler);
 
 	// 不做频道超时检查
 	CLOSE_CHANNEL_INACTIVITIY_DETECTION();

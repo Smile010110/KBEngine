@@ -29,6 +29,33 @@
 
 [点击查看插件使用文档](https://www.kbelab.com/kbex/)
 
+- [x] [**新建项目**](https://www.kbelab.com/kbex/create_project.html) 通过 Pycharm IDE 新建项目
+
+- [x] [**插件设置**](https://www.kbelab.com/kbex/settings.html) 配置项目相关信息
+
+- [x] [**服务端管理**](https://www.kbelab.com/kbex/server.html) 在Pycharm中启动、停止、调试服务端
+
+- [x] [**SDK生成**](https://www.kbelab.com/kbex/gensdk.html) 一键生成SDK
+
+- [x] [**远程服务**](https://www.kbelab.com/kbex/settings.html#二、ssh-配置功能) 支持远程服务端，自动上传项目
+
+- [x] [**项目支持**](https://www.kbelab.com/kbex/create_project.html#_3-创建成功后-插件会创建venv虚拟环境-并设置隔离app工作区) 支持KBE项目结构，隔离BASE/CELL/BOTS 工作区
+
+- [x] [**内置 KBEngine 模块**](https://www.kbelab.com/kbex/builtin_modules.html) 插件内置 KBEngine 模块，支持tips自动区分BASE、CELL等模块，自动提示、补全
+
+- [x] [**内置 Math 模块**](https://www.kbelab.com/kbex/builtin_modules.html) 件内置 Math 模块，支持内置方法自动提示、补全
+
+- [x] [**自动补全**](https://www.kbelab.com/kbex/completion_contributor.html) 支持base/cell class 映射、代码自动补全 ，支持client方法自动补全，支持def文件自动补全及代码生成
+
+- [x] [**代码跳转**](https://www.kbelab.com/kbex/completion_contributor.html#符号跳转) 支持base/cell/client 跳转符号定义处
+
+- [x] [**文件映射**](https://www.kbelab.com/kbex/completion_contributor.html#文件映射) 支持PY文件与DEF文件间的项目跳转
+
+- [x] [**类型映射**](https://www.kbelab.com/kbex/completion_contributor.html#类型映射) 为KBE基础类型提供类型映射
+
+
+---
+
 
 ## 什么是 KBEngine
 
@@ -84,49 +111,10 @@ KBEngine Nex 是在KBEngine 2.5.12 的基础上社区继续维护的版本
 
 **注意：VCPKG强依赖于Github，需要网络支持，请自行解决网络问题！**
 
-### 1. 安装 Git
-
-**作用**：Git 是分布式版本控制工具，用于从 GitHub 拉取 KBEngine-Nex 的源代码以及vcpkg依赖支持。
-
-**安装步骤**：
-
-##### Windows：
-```
-# 下载 Git 安装程序
-https://git-scm.com/download/win
-
-# 安装完成后验证
-git --version
-```
-
-##### Linux：
-```
-sudo apt install git #Ubuntu
-```
+**Gitee目录提供了国内镜像安装脚本**
 
 
-### 2. 安装 vcpkg（可选）
-
-**作用**：vcpkg 是 C++ 包管理工具，用于安装 KBEngine-Nex 所需的依赖库（如 OpenSSL 等）。
-
-**提示**：如果本机不安装vcpkg，则脚本会自动安装vcpkg到用户根目录。
-
-**安装步骤**：
-
-```
-# 克隆 vcpkg 仓库
-git clone https://github.com/microsoft/vcpkg.git
-
-# 进入 vcpkg 目录
-cd vcpkg
-
-# 编译 vcpkg
-.\bootstrap-vcpkg.bat #Windows
-.\bootstrap-vcpkg.sh #Linux
-```
-
-
-### 3. 执行编译脚本 `install_*.bat/sh`
+### 执行编译脚本 `install_*.bat/sh`
 
 **作用**：自动编译 KBEngine-Nex 服务端和工具。
 
@@ -137,7 +125,6 @@ install_windows.bat [CONFIG] [VCPKGPATH]
 ```
 
 ``` sh
-# Linux 下不支持设置vcpkg路径，脚本会自动安装vcpkg到~/kbe-vcpkg中
 install_linux.sh [CONFIG]
 ```
 

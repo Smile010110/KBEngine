@@ -39,7 +39,8 @@ ServerConfig::ServerConfig():
 	emailServerInfo_(),
 	emailAtivationInfo_(),
 	emailResetPasswordInfo_(),
-	emailBindInfo_()
+	emailBindInfo_(),
+	asyncioRepeatOffset_(0.1f)
 {
 }
 
@@ -433,6 +434,11 @@ bool ServerConfig::loadConfig(std::string fileName)
 	rootNode = xml->getRootNode("gameUpdateHertz");
 	if(rootNode != NULL){
 		gameUpdateHertz_ = xml->getValInt(rootNode);
+	}
+
+	rootNode = xml->getRootNode("asyncioRepeatOffset");
+	if(rootNode != NULL){
+		asyncioRepeatOffset_ = KBE_MAX(0.01f, float(xml->getValFloat(rootNode)));
 	}
 
 	rootNode = xml->getRootNode("bitsPerSecondToClient");

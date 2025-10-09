@@ -329,7 +329,7 @@ bool Cellapp::initializeEnd()
 
 	ScriptTimers* pTimers = &asyncTimerTimers_;
 	AsyncTimerHandler* handler = new AsyncTimerHandler(pTimers, submitFunc);
-	ScriptTimersUtil::addTimer(&pTimers, 0.1f, 0.1f, 0, handler);
+	ScriptTimersUtil::addTimer(&pTimers, 0.1f, g_kbeSrvConfig.asyncioRepeatOffset(), 0, handler);
 
 	// 是否管理Y轴
 	CoordinateSystem::hasY = g_kbeSrvConfig.getCellApp().coordinateSystem_hasY;

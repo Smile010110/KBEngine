@@ -666,7 +666,9 @@ bool Baseapp::initializeEnd()
 
 	ScriptTimers* pTimers = &asyncTimerTimers_;
 	AsyncTimerHandler*handler = new AsyncTimerHandler(pTimers, submitFunc);
-	ScriptTimersUtil::addTimer(&pTimers,0.1f,0.1f,0, handler);
+	ScriptTimersUtil::addTimer(&pTimers,0.1f,g_kbeSrvConfig.asyncioRepeatOffset(),0, handler);
+
+	
 
 	if(Resmgr::respool_checktick > 0)
 	{
