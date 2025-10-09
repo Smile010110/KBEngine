@@ -291,6 +291,9 @@ public:
 	INLINE int dbInterfaceName2dbInterfaceIndex(const std::string& dbInterfaceName);
 	INLINE const char* dbInterfaceIndex2dbInterfaceName(size_t dbInterfaceIndex);
 
+	
+	INLINE float asyncioRepeatOffset(void) const;
+
 private:
 	void _updateEmailInfos();
 
@@ -334,6 +337,9 @@ public:
 	EmailSendInfo emailAtivationInfo_;
 	EmailSendInfo emailResetPasswordInfo_;
 	EmailSendInfo emailBindInfo_;
+
+	
+	float asyncioRepeatOffset_; // asyncio调度频率（秒）
 
 };
 
