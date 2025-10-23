@@ -269,35 +269,49 @@ bool DBInterfaceRedis::query(const std::string& cmd, redisReply** pRedisReply, b
 bool DBInterfaceRedis::query(const char* cmd, uint32 size, bool printlog, MemoryStream * result)
 {
 	KBE_ASSERT(pRedisContext_);
-	redisReply* pRedisReply = (redisReply*)redisCommand(pRedisContext_, cmd);
-	
-	lastquery_ = cmd;
-	RedisWatcher::querystatistics(lastquery_.c_str(), (uint32)lastquery_.size());
-	write_query_result(pRedisReply, result);
-	
-	if (pRedisContext_->err) 
-	{
-		if(printlog)
+
+	try {
+		redisReply* pRedisReply = (redisReply*)redisCommand(pRedisContext_, cmd);
+
+		lastquery_ = cmd;
+		RedisWatcher::querystatistics(lastquery_.c_str(), (uint32)lastquery_.size());
+		write_query_result(pRedisReply, result);
+
+		if (pRedisContext_->err)
 		{
-			ERROR_MSG(fmt::format("DBInterfaceRedis::query: cmd={}, errno={}, error={}\n",
-				cmd, pRedisContext_->err, pRedisContext_->errstr));
+			if (printlog)
+			{
+				ERROR_MSG(fmt::format("DBInterfaceRedis::query: cmd={}, errno={}, error={}\n",
+					cmd, pRedisContext_->err, pRedisContext_->errstr));
+			}
+
+			if (pRedisReply)
+				freeReplyObject(pRedisReply);
+
+			this->throwError(NULL);
+			return false;
 		}
 
-		if(pRedisReply)
-			freeReplyObject(pRedisReply); 
-		
-		this->throwError(NULL);
-		return false;
-	}  
+		freeReplyObject(pRedisReply);
 
-	freeReplyObject(pRedisReply); 
+		if (printlog)
+		{
+			INFO_MSG("DBInterfaceRedis::query: successfully!\n");
+		}
 
-	if(printlog)
-	{
-		INFO_MSG("DBInterfaceRedis::query: successfully!\n"); 
+		return true;
 	}
-
-	return true;
+	catch (redis::DBException& e)
+	{
+		// 异常已经被throwError抛出，这里捕获并处理
+		ERROR_MSG(fmt::format("DBInterfaceRedis::query: cmd={}, exception={}\n", cmd, e.what()));
+		return this->processException(e);
+	}
+	catch (...)
+	{
+		ERROR_MSG("DBInterfaceRedis::query: Unknown exception occurred\n");
+		return false;
+	}
 }
 
 //-------------------------------------------------------------------------------------
@@ -563,7 +577,7 @@ bool DBInterfaceRedis::unlock()
 }
 
 //-------------------------------------------------------------------------------------
-void DBInterfaceRedis::throwError(DBException* pDBException)
+void DBInterfaceRedis::throwError(redis::DBException* pDBException)
 {
 	if (pDBException)
 	{
@@ -571,7 +585,7 @@ void DBInterfaceRedis::throwError(DBException* pDBException)
 	}
 	else
 	{
-		DBException e(this);
+		redis::DBException e(this);
 
 		if (e.isLostConnection())
 		{
@@ -585,7 +599,8 @@ void DBInterfaceRedis::throwError(DBException* pDBException)
 //-------------------------------------------------------------------------------------
 bool DBInterfaceRedis::processException(std::exception & e)
 {
-	DBException* dbe = static_cast<DBException*>(&e);
+
+	redis::DBException* dbe = static_cast<redis::DBException*>(&e);
 	bool retry = false;
 
 	if (dbe->isLostConnection())

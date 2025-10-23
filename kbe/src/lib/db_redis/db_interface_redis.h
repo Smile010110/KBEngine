@@ -10,6 +10,7 @@
 #include "helper/debug_helper.h"
 #include "db_interface/db_interface.h"
 
+#include "db_exception.h"
 #include "hiredis/hiredis.h"
 // #if KBE_PLATFORM == PLATFORM_WIN32
 // #ifdef _DEBUG
@@ -133,7 +134,7 @@ public:
 	virtual bool lock();
 	virtual bool unlock();
 
-	void throwError(DBException* pDBException);
+	void throwError(redis::DBException* pDBException);
 	
 	/**
 		处理异常

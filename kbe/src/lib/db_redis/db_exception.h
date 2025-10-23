@@ -5,25 +5,29 @@
 
 #include <string>
 
-namespace KBEngine { 
+namespace KBEngine {
 
-class DBInterface;
-class DBException : public std::exception
-{
-public:
-	DBException(DBInterface* pdbi);
-	~DBException() throw();
+	class DBInterface;
 
-	virtual const char * what() const throw() { return errStr_.c_str(); }
+	namespace redis {
 
-	bool shouldRetry() const;
-	bool isLostConnection() const;
+		class DBException : public std::exception
+		{
+		public:
+			DBException(DBInterface* pdbi);
+			~DBException() throw();
 
-private:
-	std::string errStr_;
-	unsigned int errNum_;
-};
+			virtual const char* what() const throw() { return errStr_.c_str(); }
 
+			bool shouldRetry() const;
+			bool isLostConnection() const;
+
+		private:
+			std::string errStr_;
+			unsigned int errNum_;
+		};
+
+	}
 }
 
 #endif // KBE_DB_EXCEPTION_H
