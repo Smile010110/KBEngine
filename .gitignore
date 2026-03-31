@@ -203,6 +203,7 @@ balls_server_assets
 kbengine_demos_assets
 *server_assets*
 *demo*_assets*
+base_assets
 
 
 # webconsole
