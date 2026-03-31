@@ -805,7 +805,7 @@ void TelnetHandler::processPythonCommand(std::string command)
 		return;
 	}
 
-	DEBUG_MSG(fmt::format("TelnetHandler::processPythonCommand: size({}), command={}.\n", 
+	DEBUG_MSG(fmt::format("TelnetHandler::processPythonCommand: size({}), command={}\n", 
 		command.size(), command));
 
 	std::string retbuf = "";

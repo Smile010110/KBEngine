@@ -217,7 +217,7 @@ namespace KBEngine
 			Event.fireIn("_onConnectionState", new object[] { state });
 		}
 
-		public virtual void connectTo(string ip, int port, ConnectCallback callback, object userData)
+		public virtual void connectTo(string ip, int port, ConnectCallback callback, object userData, Dictionary<string, string> domainMapping, Dictionary<int, int> portMapping)
 		{
 			if (valid())
 				throw new InvalidOperationException("Have already connected!");

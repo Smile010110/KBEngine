@@ -99,6 +99,8 @@ install_dep "GCC" false gcc
 install_dep "G++" false g++ gcc-c++
 install_dep "Make" false make
 install_dep "Autoconf" false autoconf
+install_dep "autoconf-archive" false autoconf-archive
+install_dep "automake" false automake
 install_dep "Libtool" false libtool-bin libtool
 install_dep "CMake" false cmake
 install_dep "pkg-config" false pkg-config pkgconf-pkg-config pkgconf
@@ -187,6 +189,11 @@ else
     echo "[INFO] vcpkg already exists: $VCPKG_DIR"
 fi
 
+
+git -C "$VCPKG_DIR" reset --hard HEAD
+git -C "$VCPKG_DIR" pull
+
+
 OLDPWD=$(pwd)
 cd "$VCPKG_DIR"
 ./bootstrap-vcpkg.sh
@@ -206,4 +213,4 @@ cmake -B build -S . \
 echo "[INFO] Building KBEngine-Nex"
 cmake --build build -j"$(nproc)"
 
-echo "[INFO] Installation complete 🎉"
+echo "[INFO] Installation complete"

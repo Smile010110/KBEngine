@@ -1,4 +1,4 @@
-﻿// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #include "navigation_mesh_handle.h"	
 #include "navigation/navigation.h"
@@ -74,7 +74,7 @@ int NavMeshHandle::findStraightPath(int layer, const Position3D& start, const Po
 
 	if (!startRef || !endRef)
 	{
-		ERROR_MSG(fmt::format("NavMeshHandle::findStraightPath({2}): Could not find any nearby poly's ({0}, {1})\n", startRef, endRef, resPath));
+		WARNING_MSG(fmt::format("NavMeshHandle::findStraightPath({2}): Could not find any nearby poly's ({0}, {1})\n", startRef, endRef, resPath));
 		return NAV_ERROR_NEARESTPOLY;
 	}
 
@@ -122,7 +122,7 @@ int NavMeshHandle::findRandomPointAroundCircle(int layer, const Position3D& cent
 	std::map<int, NavmeshLayer>::iterator iter = navmeshLayer.find(layer);
 	if (iter == navmeshLayer.end())
 	{
-		ERROR_MSG(fmt::format("NavMeshHandle::findRandomPointAroundCircle: not found layer({})\n", layer));
+		WARNING_MSG(fmt::format("NavMeshHandle::findRandomPointAroundCircle: not found layer({})\n", layer));
 		return NAV_ERROR;
 	}
 
@@ -169,7 +169,7 @@ int NavMeshHandle::findRandomPointAroundCircle(int layer, const Position3D& cent
 
 	if (!startRef)
 	{
-		ERROR_MSG(fmt::format("NavMeshHandle::findRandomPointAroundCircle({1}): Could not find any nearby poly's ({0})\n", startRef, resPath));
+		WARNING_MSG(fmt::format("NavMeshHandle::findRandomPointAroundCircle({1}): Could not find any nearby poly's ({0})\n", startRef, resPath));
 		return NAV_ERROR_NEARESTPOLY;
 	}
 
@@ -311,6 +311,8 @@ int NavMeshHandle::findRandomPointAroundCircle(int layer, const Position3D& cent
 
 			float src_len = sqrt(2) * squareSize;
 			float xx = centerPos.x - currpos.x;
+			
+			// 这里应该是zz，待测试，不改影响也不大，可能导致circle 半径校验略微偏差，Y 变化较大的地图中，随机点筛掉略多
 			float yy = centerPos.y - currpos.y;
 			float dist_len = sqrt(xx * xx + yy * yy);
 
@@ -420,7 +422,7 @@ NavigationHandle* NavMeshHandle::create(std::string resPath, const std::map< int
 	if(params.size() == 0)
 	{
 		std::vector<std::wstring> results;
-		Resmgr::getSingleton().listPathRes(wspath, L"navmesh", results);
+		Resmgr::getSingleton().listPathRes(wspath, L"bin", results);
 
 		if(results.size() == 0)
 		{
@@ -674,6 +676,152 @@ bool NavMeshHandle::_create(int layer, const std::string& resPath, const std::st
 	return true;
 }
 
+dtPolyRef NavMeshHandle::findNearestPoly(
+	int layer,                         // navmesh 层（KBE 多 layer）
+	const Position3D& pos,             // 世界坐标
+	Position3D* nearestPt              // [可选] navmesh 上的最近点
+)
+{
+	// 每个 layer 对应一套 dtNavMesh + dtNavMeshQuery
+	auto iter = navmeshLayer.find(layer);
+	if (iter == navmeshLayer.end())
+		return INVALID_NAVMESH_POLYREF;
+
+	// Detour 查询对象（线程不安全，但 KBE 单线程 cell）
+	dtNavMeshQuery* query = iter->second.pNavmeshQuery;
+
+	// Detour 使用 float[3] 而不是向量类
+	float p[3] = { pos.x, pos.y, pos.z };
+
+	// 查询包围盒（extents）
+	// 含义：在 pos 周围这个范围内找最近 polygon
+	// y 给大一点，避免楼层/坡道找不到
+	const float ext[3] = { 2.f, 4.f, 2.f };
+
+	// 查询过滤器（决定哪些 poly 可走）
+	// KBE 当前没做 area / flag 区分，先全开
+	dtQueryFilter filter;
+	filter.setIncludeFlags(0xffff);
+	filter.setExcludeFlags(0);
+
+	dtPolyRef ref = INVALID_NAVMESH_POLYREF;
+	float nearest[3];
+
+	// 核心 Detour API：
+	// - ref   ：返回最近的 polygon
+	// - nearest：pos 在该 polygon 上的投影点
+	if (dtStatusFailed(query->findNearestPoly(
+		p, ext, &filter, &ref, nearest)))
+	{
+		return INVALID_NAVMESH_POLYREF;
+	}
+
+	// 如果调用者需要“修正后的位置”，则返回
+	if (nearestPt)
+	{
+		nearestPt->x = nearest[0];
+		nearestPt->y = nearest[1];
+		nearestPt->z = nearest[2];
+	}
+
+	// polyRef 是 Detour 的“地面锚点”，
+	// 后续 moveAlongSurface / getPolyHeight 都依赖它
+	return ref;
+}
+
+
+bool NavMeshHandle::moveAlongSurface(
+	int layer,                         // navmesh 层
+	dtPolyRef& inoutPoly,              // 【关键】当前所在 poly（会被更新）
+	const Position3D& start,           // 当前世界坐标
+	const Position3D& end,             // 期望到达的位置（直线）
+	Position3D& outPos                 // 实际在 navmesh 上的结果位置
+)
+{
+	// polyRef 为空，说明 Entity 当前不在 navmesh 上
+	// 这种情况应该先 findNearestPoly
+	if (!inoutPoly)
+		return false;
+
+	auto iter = navmeshLayer.find(layer);
+	if (iter == navmeshLayer.end())
+		return false;
+
+	dtNavMeshQuery* query = iter->second.pNavmeshQuery;
+
+	// Detour 输入输出向量
+	float s[3] = { start.x, start.y, start.z };
+	float e[3] = { end.x,   end.y,   end.z };
+	float r[3];                          // Detour 返回的结果点
+
+	// 查询过滤器（同上）
+	dtQueryFilter filter;
+	filter.setIncludeFlags(0xffff);
+	filter.setExcludeFlags(0);
+
+	// Detour 会返回：
+	// - 实际经过的 polygon 序列
+	dtPolyRef visited[16];
+	int visitedCount = 0;
+
+	// Detour 核心 API：
+	// 含义：
+	//   从 start 开始，沿 navmesh 表面，朝 end 移动
+	//   即使 end 在墙后 / 洞外，也不会穿过去
+	dtStatus status = query->moveAlongSurface(
+		inoutPoly,      // 起始 poly
+		s,              // 起点
+		e,              // 目标
+		&filter,
+		r,              // 实际到达点
+		visited,        // 经过的 poly
+		&visitedCount,
+		16
+	);
+
+	if (dtStatusFailed(status))
+		return false;
+
+	// 更新 polyRef：
+	// Detour 可能跨越多个 polygon
+	// 必须使用“最后一个”作为当前所在 poly
+	if (visitedCount > 0)
+		inoutPoly = visited[visitedCount - 1];
+
+	// 返回 navmesh 上的合法位置
+	outPos.x = r[0];
+	outPos.y = r[1];
+	outPos.z = r[2];
+
+	return true;
+}
+
+
+float NavMeshHandle::getPolyHeight(
+	int layer,
+	dtPolyRef poly,                    // 当前所在 polygon
+	const Position3D& pos              // x/z 来自 moveAlongSurface
+)
+{
+	auto iter = navmeshLayer.find(layer);
+	if (iter == navmeshLayer.end() || !poly)
+		return pos.y;
+
+	dtNavMeshQuery* query = iter->second.pNavmeshQuery;
+
+	// Detour 输入点
+	float p[3] = { pos.x, pos.y, pos.z };
+	float h = pos.y;
+
+	// Detour API：
+	// 在指定 poly 内，计算该点的“地面高度”
+	if (dtStatusSucceed(query->getPolyHeight(poly, p, &h)))
+		return h;
+
+	// 查询失败则保持原高度
+	return pos.y;
+}
+
 //-------------------------------------------------------------------------------------
 inline float calAtan(float* srcPoint, float* point)
 {
@@ -760,6 +908,8 @@ void NavMeshHandle::getOverlapPolyPoly2D(const float* polyVertsA, const int nPol
 
 void NavMeshHandle::clockwiseSortPoints(float* verts, const int nVerts)
 {
+	//clockwiseSortPoints 使用 atan2，算法复杂度 O(n²)，点多时可能慢。如果点少（<=10），没问题。
+
 	float x = 0.0;
 	float z = 0.0;
 	for (int i = 0; i < nVerts; ++i)

@@ -5,6 +5,7 @@ set(SRCS
 	client_sdk_unity.cpp
 	client_sdk_ue4.cpp
 	client_sdk_ue5.cpp
+	client_sdk_cxx.cpp
 	client_sdk_typescript.cpp
 	client_sdk_plugin.cpp
 	client_sdk_csharp.cpp

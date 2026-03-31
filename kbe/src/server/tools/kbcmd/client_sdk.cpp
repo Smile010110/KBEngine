@@ -5,6 +5,7 @@
 #include "client_sdk_unity.h"	
 #include "client_sdk_ue4.h"
 #include "client_sdk_ue5.h"
+#include "client_sdk_cxx.h"
 #include "client_sdk_typescript.h"
 #include "client_sdk_csharp.h"
 #include "client_sdk_plugin.h"
@@ -76,6 +77,10 @@ ClientSDK* ClientSDK::createClientSDK(const std::string& type)
 	else if (lowerType == "csharp")
 	{
 		return new ClientSDKCSharp();
+	}
+	else if (lowerType == "cxx")
+	{
+		return new ClientSDKCXX();
 	}
 
 	return NULL;

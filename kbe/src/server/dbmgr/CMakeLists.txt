@@ -24,7 +24,7 @@ add_executable(dbmgr ${SRCS})
 target_link_libraries(dbmgr
     PRIVATE
 		db_interface
-		db_redis
+		db_mongodb
 		db_mysql
         server
         resmgr

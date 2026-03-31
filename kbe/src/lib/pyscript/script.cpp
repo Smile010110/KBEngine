@@ -105,7 +105,28 @@ int Script::run_simpleString(const char* command, std::string* retBufferPtr)
 
 		d = PyModule_GetDict(m);
 
-		v = PyRun_String(command, Py_single_input, d, d);
+
+		// 去掉末尾的 \r 和 \n
+		size_t len = strlen(command);
+		while (len > 0 && (command[len - 1] == '\n' || command[len - 1] == '\r'))
+		{
+			--len;
+		}
+		std::string trimmedCommand(command, len);
+		bool isMultiLine = trimmedCommand.find('\n') != std::string::npos;
+
+
+		//v = PyRun_String(command, Py_single_input, d, d);
+		if (isMultiLine)
+		{
+			// 多行用 Py_file_input
+			v = PyRun_String(command, Py_file_input, d, d);
+		}
+		else
+		{
+			// 单行用 Py_single_input
+			v = PyRun_String(command, Py_single_input, d, d);
+		}
 		if (v == NULL) 
 		{
 			PyErr_Print();

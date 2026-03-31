@@ -174,11 +174,12 @@ fi
 echo "[成功] Gitee 仓库可访问"
 
 
-
 # =========================================
 # vcpkg 安装
 # =========================================
 VCPKG_DIR="$HOME/kbe-vcpkg-gitee"
+echo "[INFO] 检查vcpkg目录..."
+
 if [ ! -d "$VCPKG_DIR" ] || [ ! -f "$VCPKG_DIR/bootstrap-vcpkg.sh" ]; then
     echo "[INFO] 克隆 vcpkg"
     git clone https://gitee.com/KBEngineLab/kbe-vcpkg-gitee.git "$VCPKG_DIR"
@@ -186,6 +187,38 @@ else
     echo "[INFO] vcpkg 已存在: $VCPKG_DIR"
 fi
 
+
+git -C "$VCPKG_DIR" reset --hard HEAD
+git -C "$VCPKG_DIR" pull
+
+
+# =========================================
+# downloads目录处理
+# =========================================
+DOWNLOADS_PATH="$VCPKG_DIR/downloads"
+echo "[INFO] 检查downloads目录..."
+
+if [ ! -d "$DOWNLOADS_PATH" ]; then
+    echo "[INFO] Downloads目录不存在，克隆仓库..."
+    git clone -b v27x https://gitee.com/KBEngineLab/kbe-vcpkg-gitee-download.git "$DOWNLOADS_PATH"
+else
+    echo "[INFO] Downloads目录已存在，检查.git目录..."
+    if [ ! -d "$DOWNLOADS_PATH/.git" ]; then
+        echo "[INFO] .git目录不存在，删除并重新克隆..."
+        rm -rf "$DOWNLOADS_PATH"
+        git clone -b v27x https://gitee.com/KBEngineLab/kbe-vcpkg-gitee-download.git "$DOWNLOADS_PATH"
+    else
+        echo "[INFO] 更新downloads仓库..."
+        cd "$DOWNLOADS_PATH"
+        git pull
+        cd -
+    fi
+fi
+
+# =========================================
+# 运行bootstrap脚本
+# =========================================
+echo "[INFO] 运行bootstrap-vcpkg.sh..."
 OLDPWD=$(pwd)
 cd "$VCPKG_DIR"
 ./bootstrap-vcpkg.sh
@@ -205,4 +238,4 @@ cmake -B build -S . \
 echo "[INFO] 开始编译 KBEngine-Nex"
 cmake --build build -j"$(nproc)"
 
-echo "[INFO] 安装完成 🎉"
+echo "[INFO] 安装完成"

@@ -55,6 +55,7 @@ SCRIPT_METHOD_DECLARE("cancelController",			pyCancelController,				METH_VARARGS,
 SCRIPT_METHOD_DECLARE("canNavigate",				pycanNavigate,					METH_VARARGS,				0)
 SCRIPT_METHOD_DECLARE("navigatePathPoints",			pyNavigatePathPoints,			METH_VARARGS,				0)
 SCRIPT_METHOD_DECLARE("navigate",					pyNavigate,						METH_VARARGS,				0)
+SCRIPT_METHOD_DECLARE("navigateToDetour", pyNavigateToDetour, METH_VARARGS, 0)
 SCRIPT_METHOD_DECLARE("getRandomPoints",			pyGetRandomPoints,				METH_VARARGS,				0)
 SCRIPT_METHOD_DECLARE("moveToPoint",				pyMoveToPoint,					METH_VARARGS,				0)
 SCRIPT_METHOD_DECLARE("moveToEntity",				pyMoveToEntity,					METH_VARARGS,				0)
@@ -110,6 +111,7 @@ pPyDirection_(NULL),
 posChangedTime_(0),
 dirChangedTime_(0),
 isOnGround_(false),
+isOnNavigate_(false),
 topSpeed_(-0.1f),
 topSpeedY_(-0.1f),
 witnesses_(),
@@ -1260,106 +1262,115 @@ void Entity::onWriteToDB()
 }
 
 //-------------------------------------------------------------------------------------
-bool Entity::bufferOrExeCallback(const char * funcName, PyObject * funcArgs, bool notFoundIsOK)
+bool Entity::bufferOrExeCallback(const char* funcName, PyObject* funcArgs, bool notFoundIsOK)
 {
 	bool canBuffer = _scriptCallbacksBufferCount > 0;
 
 	PyObject* pyCallable = PyObject_GetAttrString(this, const_cast<char*>(funcName));
+	bool hasEntityCallable = (pyCallable != NULL);
 
-	if (pyCallable == NULL)
+	if (!hasEntityCallable)
 	{
 		if (!notFoundIsOK)
 		{
-			ERROR_MSG(fmt::format("{}::bufferOrExeCallback({}): method({}) not found!\n",
+			ERROR_MSG(fmt::format("{}::bufferOrExeCallback({}): method({}) not found on entity!\n",
 				scriptName(), id(), funcName));
 		}
 
-		if (funcArgs)
-			Py_DECREF(funcArgs);
-
 		PyErr_Clear();
-		return false;
 	}
 
-	if (canBuffer)
+	// ---------- entity 自身 ----------
+	if (hasEntityCallable)
 	{
-		BufferedScriptCall* pBufferedScriptCall = new BufferedScriptCall();
-		pBufferedScriptCall->entityPtr = this;
-		pBufferedScriptCall->pyFuncArgs = funcArgs;
-		pBufferedScriptCall->pyCallable = pyCallable;
-		pBufferedScriptCall->funcName = funcName;
-		_scriptCallbacksBuffer.push_back(pBufferedScriptCall);
-		++_scriptCallbacksBufferNum;
-	}
-	else
-	{
-		Py_INCREF(this);
-		PyObject* pyResult = PyObject_CallObject(pyCallable, funcArgs);
-
-		Py_DECREF(pyCallable);
-
-		if (pyResult)
+		if (canBuffer)
 		{
-			// todo: 待测试：这里需要考虑协程的情况
-			AsyncioHelper::submitCoroutine(pyResult);
-			Py_DECREF(pyResult);
+			BufferedScriptCall* pBufferedScriptCall = new BufferedScriptCall();
+			pBufferedScriptCall->entityPtr = this;
+			pBufferedScriptCall->pyFuncArgs = funcArgs;
+			pBufferedScriptCall->pyCallable = pyCallable;
+			pBufferedScriptCall->funcName = funcName;
+			_scriptCallbacksBuffer.push_back(pBufferedScriptCall);
+			++_scriptCallbacksBufferNum;
+
+			return true;
+		}
+		else
+		{
+			Py_INCREF(this);
+
+			PyObject* pyResult = PyObject_CallObject(pyCallable, funcArgs);
+			Py_DECREF(pyCallable);
+
+			if (pyResult)
+			{
+				AsyncioHelper::submitCoroutine(pyResult);
+				Py_DECREF(pyResult);
+			}
+			else
+			{
+				PyErr_PrintEx(0);
+			}
+
+			Py_DECREF(this);
+		}
+	}
+
+	// ---------- 通知组件（无论 entity 是否有方法） ----------
+	ScriptDefModule::COMPONENTDESCRIPTION_MAP& componentDescrs =
+		pScriptModule_->getComponentDescrs();
+
+	ScriptDefModule::COMPONENTDESCRIPTION_MAP::iterator comps_iter =
+		componentDescrs.begin();
+
+	for (; comps_iter != componentDescrs.end(); ++comps_iter)
+	{
+		if (!comps_iter->second->hasCell())
+			continue;
+
+		PyObject* pyCompObj =
+			PyObject_GetAttrString(this, comps_iter->first.c_str());
+
+		if (!pyCompObj)
+		{
+			SCRIPT_ERROR_CHECK();
+			continue;
+		}
+
+		PyObject* pyCompCallable =
+			PyObject_GetAttrString(pyCompObj, const_cast<char*>(funcName));
+
+		if (!pyCompCallable)
+		{
+			PyErr_Clear();
+			Py_DECREF(pyCompObj);
+			continue;
+		}
+
+		PyObject* pyCompResult =
+			PyObject_CallObject(pyCompCallable, funcArgs);
+
+		Py_DECREF(pyCompCallable);
+
+		if (pyCompResult)
+		{
+			AsyncioHelper::submitCoroutine(pyCompResult);
+			Py_DECREF(pyCompResult);
 		}
 		else
 		{
 			PyErr_PrintEx(0);
 		}
 
-		// 通知所有组件
-		ScriptDefModule::COMPONENTDESCRIPTION_MAP& componentDescrs = pScriptModule_->getComponentDescrs();
-		ScriptDefModule::COMPONENTDESCRIPTION_MAP::iterator comps_iter = componentDescrs.begin();
-		for (; comps_iter != componentDescrs.end(); ++comps_iter)
-		{
-			if (!comps_iter->second->hasCell())
-				continue;
-
-			PyObject* pyTempObj = PyObject_GetAttrString(this, comps_iter->first.c_str());
-			if (pyTempObj)
-			{
-				PyObject* pyCompCallable = PyObject_GetAttrString(pyTempObj, const_cast<char*>(funcName));
-
-				if (pyCompCallable == NULL)
-				{
-					PyErr_Clear();
-				}
-				else
-				{
-					PyObject* pyCompResult = PyObject_CallObject(pyCompCallable, funcArgs);
-
-					Py_DECREF(pyCompCallable);
-
-					if (pyCompResult)
-					{
-						// todo: 待测试：这里需要考虑协程的情况
-						AsyncioHelper::submitCoroutine(pyCompResult);
-						Py_DECREF(pyCompResult);
-					}
-					else
-					{
-						PyErr_PrintEx(0);
-					}
-				}
-
-				Py_DECREF(pyTempObj);
-			}
-			else
-			{
-				SCRIPT_ERROR_CHECK();
-			}
-		}
-
-		if (funcArgs)
-			Py_DECREF(funcArgs);
-
-		Py_DECREF(this);
+		Py_DECREF(pyCompObj);
 	}
 
-	return true;
+	if (funcArgs)
+		Py_DECREF(funcArgs);
+
+	return hasEntityCallable;
 }
+
 
 //-------------------------------------------------------------------------------------
 void Entity::bufferCallback(bool enable)
@@ -2669,9 +2680,9 @@ PyObject* Entity::pyNavigatePathPoints(PyObject_ptr pyDestination, float maxSear
 
 //-------------------------------------------------------------------------------------
 uint32 Entity::navigate(const Position3D& destination, float velocity, float distance, float maxMoveDistance, float maxSearchDistance,
-	bool faceMovement, int8 layer, PyObject* userData)
+	bool faceMovement, int8 layer, PyObject* userData, bool useDetour)
 {
-	VECTOR_POS3D_PTR paths_ptr( new std::vector<Position3D>() );
+	VECTOR_POS3D_PTR paths_ptr(new std::vector<Position3D>());
 	navigatePathPoints(*paths_ptr, destination, maxSearchDistance, layer);
 	if (paths_ptr->size() <= 0)
 	{
@@ -2683,47 +2694,59 @@ uint32 Entity::navigate(const Position3D& destination, float velocity, float dis
 	velocity = velocity / g_kbeSrvConfig.gameUpdateHertz();
 
 	KBEShared_ptr<Controller> p(new MoveController(this, NULL));
-	
-	new NavigateHandler(p, destination, velocity, 
+	NavigateHandler* handler = nullptr;
+	if (useDetour) {
+		handler = new NavigateHandler(p, destination, distance, velocity, layer,
+			maxMoveDistance, faceMovement, userData, useDetour);
+	}
+	else {
+		handler = new NavigateHandler(p, destination, velocity,
 		distance, faceMovement, maxMoveDistance, paths_ptr, userData);
+	}
+	
 
 	bool ret = pControllers_->add(p);
 	KBE_ASSERT(ret);
 	
 	pMoveController_ = p;
+	// 立即执行一次 update（避免空帧）
+	if (handler && !handler->isDestroyed())
+	{
+		handler->update();
+	}
 	return p->id();
 }
 
 //-------------------------------------------------------------------------------------
 PyObject* Entity::pyNavigate(PyObject_ptr pyDestination, float velocity, float distance, float maxMoveDistance, float maxDistance,
-								 int8 faceMovement, int8 layer, PyObject_ptr userData)
+	int8 faceMovement, int8 layer, PyObject_ptr userData)
 {
-	if(!isReal())
+	if (!isReal())
 	{
-		PyErr_Format(PyExc_AssertionError, "%s::navigate: not is real entity(%d).", 
+		PyErr_Format(PyExc_AssertionError, "%s::navigate: not is real entity(%d).",
 			scriptName(), id());
 		PyErr_PrintEx(0);
 		return 0;
 	}
 
-	if(this->isDestroyed())
+	if (this->isDestroyed())
 	{
-		PyErr_Format(PyExc_AssertionError, "%s::navigate: %d is destroyed!\n",		
-			scriptName(), id());		
+		PyErr_Format(PyExc_AssertionError, "%s::navigate: %d is destroyed!\n",
+			scriptName(), id());
 		PyErr_PrintEx(0);
 		return 0;
 	}
 
 	Position3D destination;
 
-	if(!PySequence_Check(pyDestination))
+	if (!PySequence_Check(pyDestination))
 	{
 		PyErr_Format(PyExc_TypeError, "%s::navigate: args1(position) not is PySequence!", scriptName());
 		PyErr_PrintEx(0);
 		return 0;
 	}
 
-	if(PySequence_Size(pyDestination) != 3)
+	if (PySequence_Size(pyDestination) != 3)
 	{
 		PyErr_Format(PyExc_TypeError, "%s::navigate: args1(position) invalid!", scriptName());
 		PyErr_PrintEx(0);
@@ -2733,8 +2756,54 @@ PyObject* Entity::pyNavigate(PyObject_ptr pyDestination, float velocity, float d
 	// 将坐标信息提取出来
 	script::ScriptVector3::convertPyObjectToVector3(destination, pyDestination);
 
-	return PyLong_FromLong(navigate(destination, velocity, distance, maxMoveDistance, 
-		maxDistance, faceMovement > 0, layer, userData));
+	return PyLong_FromLong(navigate(destination, velocity, distance, maxMoveDistance,
+		maxDistance, faceMovement > 0, layer, userData, false));
+}
+
+
+
+
+//-------------------------------------------------------------------------------------
+PyObject* Entity::pyNavigateToDetour(PyObject_ptr pyDestination, float velocity, float distance, float maxMoveDistance, float maxDistance,
+	int8 faceMovement, int8 layer, PyObject_ptr userData)
+{
+	if (!isReal())
+	{
+		PyErr_Format(PyExc_AssertionError, "%s::navigate: not is real entity(%d).",
+			scriptName(), id());
+		PyErr_PrintEx(0);
+		return 0;
+	}
+
+	if (this->isDestroyed())
+	{
+		PyErr_Format(PyExc_AssertionError, "%s::navigate: %d is destroyed!\n",
+			scriptName(), id());
+		PyErr_PrintEx(0);
+		return 0;
+	}
+
+	Position3D destination;
+
+	if (!PySequence_Check(pyDestination))
+	{
+		PyErr_Format(PyExc_TypeError, "%s::navigate: args1(position) not is PySequence!", scriptName());
+		PyErr_PrintEx(0);
+		return 0;
+	}
+
+	if (PySequence_Size(pyDestination) != 3)
+	{
+		PyErr_Format(PyExc_TypeError, "%s::navigate: args1(position) invalid!", scriptName());
+		PyErr_PrintEx(0);
+		return 0;
+	}
+
+	// 将坐标信息提取出来
+	script::ScriptVector3::convertPyObjectToVector3(destination, pyDestination);
+
+	return PyLong_FromLong(navigate(destination, velocity, distance, maxMoveDistance,
+		maxDistance, faceMovement > 0, layer, userData, true));
 }
 
 //-------------------------------------------------------------------------------------

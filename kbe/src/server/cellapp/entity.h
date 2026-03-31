@@ -161,6 +161,10 @@ public:
 	INLINE bool isOnGround() const;
 	DECLARE_PY_GET_MOTHOD(pyGetIsOnGround);
 
+
+	INLINE void isOnNavigate(bool v);
+	INLINE bool isOnNavigate() const;
+
 	/** 
 		设置entity方向和位置 
 	*/
@@ -284,12 +288,13 @@ public:
 	bool canNavigate();
 	uint32 navigate(const Position3D& destination, float velocity, float distance,
 					float maxMoveDistance, float maxSearchDistance,
-					bool faceMovement, int8 layer, PyObject* userData);
+					bool faceMovement, int8 layer, PyObject* userData, bool useDetour);
 	bool navigatePathPoints(std::vector<Position3D>& outPaths, const Position3D& destination, float maxSearchDistance, int8 layer);
 
 	DECLARE_PY_MOTHOD_ARG0(pycanNavigate);
 	DECLARE_PY_MOTHOD_ARG3(pyNavigatePathPoints, PyObject_ptr, float, int8);
 	DECLARE_PY_MOTHOD_ARG8(pyNavigate, PyObject_ptr, float, float, float, float, int8, int8, PyObject_ptr);
+	DECLARE_PY_MOTHOD_ARG8(pyNavigateToDetour, PyObject_ptr, float, float, float, float, int8, int8, PyObject_ptr);
 
 	/** 
 		entity获得随机点 
@@ -644,6 +649,9 @@ protected:
 
 	// 是否在地面上
 	bool													isOnGround_;
+
+	// 是否为导航状态，主要用于导航状态Y轴下发
+	bool													isOnNavigate_;
 
 	// entity x,z轴最高移动速度
 	float													topSpeed_;

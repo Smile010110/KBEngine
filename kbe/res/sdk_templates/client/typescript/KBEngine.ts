@@ -25,6 +25,11 @@ export class KBEngineArgs {
     isOnInitCallPropertysSetMethods: boolean = true;
     useWss = false;
     wssBaseappPort = 443;
+
+    
+    domainMapping : { [key: string]: string } = { };
+    portMapping : { [key: number]: number } = { };
+
 }
 
 
@@ -68,6 +73,11 @@ export class KBEngineApp {
     private useWss: boolean = false;
     private wssBaseappPort: number = 443;
     private protocol: string = "";
+
+
+    
+    domainMapping : { [key: string]: string } = { };
+    portMapping : { [key: number]: number } = { };
 
     public currserver = "loginapp";
     private currstate = "create";
@@ -168,6 +178,8 @@ export class KBEngineApp {
         this.wssBaseappPort = args.wssBaseappPort;
         this.protocol = args.useWss ? "wss://" : "ws://";
 
+        this.portMapping = args.portMapping;
+        this.domainMapping = args.domainMapping;
 
         EntityDef.init();
 
@@ -223,24 +235,18 @@ export class KBEngineApp {
 
     private GetLoginappAddr(): string {
         let addr: string = "";
-        if (this.useWss) {
-            addr = this.protocol + this.serverAddress + ":" + this.port + "/loginapp";
-        }
-        else {
-            addr = this.protocol + this.serverAddress + ":" + this.port;
-        }
-
+        let _port = this.portMapping[this.port] || this.port;
+        let _domain = this.domainMapping[this.serverAddress] || this.serverAddress;
+        addr = this.protocol + _domain + ":" + _port;
         return addr;
     }
 
     private GetBaseappAddr(): string {
         let addr: string = "";
-        if (this.useWss) {
-            addr = this.protocol + this.baseappAddress + ":" + this.wssBaseappPort + "/baseapp" + "?port=" + this.baseappPort;
-        }
-        else {
-            addr = this.protocol + this.baseappAddress + ":" + this.baseappPort;
-        }
+        
+        let _port = this.portMapping[this.baseappPort] || this.baseappPort;
+        let _domain = this.domainMapping[this.baseappAddress] || this.baseappAddress;
+        addr = this.protocol + _domain + ":" + _port;
         return addr;
     }
 

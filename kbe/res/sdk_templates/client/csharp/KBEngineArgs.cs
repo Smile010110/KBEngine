@@ -1,6 +1,7 @@
 ﻿namespace KBEngine
 {
-	using System; 
+	using System;
+	using System.Collections.Generic;
 	
 	using MessageLengthEx = System.UInt32;
 	
@@ -28,6 +29,11 @@
 
         public bool enableWSS = false;
         
+
+        // 域名映射表，主要为wss提供支持
+        public Dictionary<string, string> domainMapping =  new Dictionary<string, string>();
+        // 端口映射表，主要为wss提供支持
+        public Dictionary<int, int> portMapping =  new Dictionary<int, int>();
 
 
         // Allow synchronization role position information to the server

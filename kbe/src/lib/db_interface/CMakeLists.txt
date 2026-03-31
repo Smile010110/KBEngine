@@ -15,7 +15,7 @@ add_library(db_interface STATIC ${SRCS})
 
 target_link_libraries(db_interface PRIVATE 
 	fmt::fmt
-	db_redis
+	db_mongodb
 	db_mysql
 	python_interface
 )

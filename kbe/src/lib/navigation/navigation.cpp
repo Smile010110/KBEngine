@@ -117,7 +117,7 @@ NavigationHandlePtr Navigation::loadNavigation(std::string resPath, const std::m
 	else 	
 	{
 		results.clear();
-		Resmgr::getSingleton().listPathRes(wspath, L"navmesh", results);
+		Resmgr::getSingleton().listPathRes(wspath, L"bin", results);
 
 		if(results.size() == 0)
 		{

@@ -442,12 +442,24 @@ int process_help(int argc, char* argv[])
 	printf("--clientsdk:\n");
 	printf("\tAutomatically generate client code based on entity_defs file. Environment variables based on KBE.\n");
 	printf("\tkbcmd.exe --clientsdk=unity --outpath=c:/unity_kbesdk\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --zip=c:/unity_kbesdk.zip\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --tar=c:/unity_kbesdk.tgz\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --outpath=c:/unity_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --zip=c:/unity_kbesdk.zip\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --tar=c:/unity_kbesdk.tgz\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --outpath=c:/unity_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --zip=c:/ue4_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --tar=c:/ue4_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --outpath=c:/ue4_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --zip=c:/ue5_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --tar=c:/ue5_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --outpath=c:/ue5_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=typescript --zip=c:/typescript_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=typescript --tar=c:/typescript_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=typescript --outpath=c:/typescript_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=csharp --zip=c:/csharp_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=csharp --tar=c:/csharp_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=csharp --outpath=c:/csharp_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=cxx --zip=c:/cxx_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=cxx --tar=c:/cxx_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=cxx --outpath=c:/cxx_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
 
 	printf("\n--getuid\n");
 	printf("\tReturns the ID of the server group.\n");

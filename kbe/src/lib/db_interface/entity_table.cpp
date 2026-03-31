@@ -296,6 +296,7 @@ EntityTable* EntityTables::findKBETable(std::string name)
 DBID EntityTables::writeEntity(DBInterface* pdbi, DBID dbid, int8 shouldAutoLoad, MemoryStream* s, ScriptDefModule* pModule)
 {
 	EntityTable* pTable = this->findTable(pModule->getName());
+	// DEBUG_MSG(fmt::format("EntityTables::writeEntity: {}\n", pModule->getName()));
 	KBE_ASSERT(pTable != NULL);
 
 	return pTable->writeTable(pdbi, dbid, shouldAutoLoad, s, pModule);

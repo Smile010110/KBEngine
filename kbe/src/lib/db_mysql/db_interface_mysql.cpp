@@ -60,47 +60,47 @@ static uint32 watcher_query(std::string cmd)
 	return 0;
 }
 
-static uint32 watcher_select(const std::string&)
+static uint32 watcher_select()
 {
 	return watcher_query("SELECT");
 }
 
-static uint32 watcher_delete(const std::string&)
+static uint32 watcher_delete()
 {
 	return watcher_query("DELETE");
 }
 
-static uint32 watcher_insert(const std::string&)
+static uint32 watcher_insert()
 {
 	return watcher_query("INSERT");
 }
 
-static uint32 watcher_update(const std::string&)
+static uint32 watcher_update()
 {
 	return watcher_query("UPDATE");
 }
 
-static uint32 watcher_create(const std::string&)
+static uint32 watcher_create()
 {
 	return watcher_query("CREATE");
 }
 
-static uint32 watcher_drop(const std::string&)
+static uint32 watcher_drop()
 {
 	return watcher_query("DROP");
 }
 
-static uint32 watcher_show(const std::string&)
+static uint32 watcher_show()
 {
 	return watcher_query("SHOW");
 }
 
-static uint32 watcher_alter(const std::string&)
+static uint32 watcher_alter()
 {
 	return watcher_query("ALTER");
 }
 
-static uint32 watcher_grant(const std::string&)
+static uint32 watcher_grant()
 {
 	return watcher_query("GRANT");
 }
@@ -113,15 +113,15 @@ static void initializeWatcher()
 	_g_installedWatcher = true;
 	_g_debug = g_kbeSrvConfig.getDBMgr().debugDBMgr;
 
-	WATCH_OBJECT("db_querys/select", &KBEngine::watcher_select);
-	WATCH_OBJECT("db_querys/delete", &KBEngine::watcher_delete);
-	WATCH_OBJECT("db_querys/insert", &KBEngine::watcher_insert);
-	WATCH_OBJECT("db_querys/update", &KBEngine::watcher_update);
-	WATCH_OBJECT("db_querys/create", &KBEngine::watcher_create);
-	WATCH_OBJECT("db_querys/drop", &KBEngine::watcher_drop);
-	WATCH_OBJECT("db_querys/show", &KBEngine::watcher_show);
-	WATCH_OBJECT("db_querys/alter", &KBEngine::watcher_alter);
-	WATCH_OBJECT("db_querys/grant", &KBEngine::watcher_grant);
+	WATCH_OBJECT("db_mysql_querys/select", &KBEngine::watcher_select);
+	WATCH_OBJECT("db_mysql_querys/delete", &KBEngine::watcher_delete);
+	WATCH_OBJECT("db_mysql_querys/insert", &KBEngine::watcher_insert);
+	WATCH_OBJECT("db_mysql_querys/update", &KBEngine::watcher_update);
+	WATCH_OBJECT("db_mysql_querys/create", &KBEngine::watcher_create);
+	WATCH_OBJECT("db_mysql_querys/drop", &KBEngine::watcher_drop);
+	WATCH_OBJECT("db_mysql_querys/show", &KBEngine::watcher_show);
+	WATCH_OBJECT("db_mysql_querys/alter", &KBEngine::watcher_alter);
+	WATCH_OBJECT("db_mysql_querys/grant", &KBEngine::watcher_grant);
 }
 
 size_t DBInterfaceMysql::sql_max_allowed_packet_ = 0;
@@ -135,6 +135,7 @@ lock_(NULL, false),
 characterSet_(characterSet),
 collation_(collation)
 {
+	DEBUG_MSG(fmt::format("DBInterfaceMysql::DBInterfaceMysql: {}\n", name));
 	lock_.pdbi(this);
 }
 

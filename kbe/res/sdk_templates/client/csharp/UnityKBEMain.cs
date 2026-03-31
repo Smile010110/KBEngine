@@ -1,6 +1,7 @@
 ﻿#if UNITY_5_3_OR_NEWER
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using KBEngine;
 using UnityEngine;
 
@@ -22,6 +23,13 @@ public class UnityKBEMain : MonoBehaviour
 	public KBEngineApp.NETWORK_ENCRYPT_TYPE networkEncryptType = KBEngineApp.NETWORK_ENCRYPT_TYPE.ENCRYPT_TYPE_NONE;
 	
 	public KBEngineApp.NETWORK_TYPE networkType = KBEngineApp.NETWORK_TYPE.KCP;
+	
+
+	// 域名映射表，主要为wss提供支持
+	public Dictionary<string, string> domainMapping =  new Dictionary<string, string>();
+	// 端口映射表，主要为wss提供支持
+	public Dictionary<int, int> portMapping =  new Dictionary<int, int>();
+
 	
 	public bool enableWSS = false;
 	public int syncPlayerMS = 1000 / @{KBE_UPDATEHZ};
@@ -68,6 +76,8 @@ public class UnityKBEMain : MonoBehaviour
 		args.serverHeartbeatTick = serverHeartbeatTick / 2;
 		args.useAliasEntityID = useAliasEntityID;
 		args.isOnInitCallPropertysSetMethods = isOnInitCallPropertysSetMethods;
+		args.domainMapping = domainMapping;
+		args.portMapping = portMapping;
 
 		args.TCP_SEND_BUFFER_MAX = (UInt32)TCP_SEND_BUFFER_MAX;
 		args.TCP_RECV_BUFFER_MAX = (UInt32)TCP_RECV_BUFFER_MAX;

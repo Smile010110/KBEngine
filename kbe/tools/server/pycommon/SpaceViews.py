@@ -40,7 +40,7 @@ class SpaceViewer(ServerApp.ServerApp):
 	"""
 	使用样例：
 	import sys
-	sys.path.append(r"F:\kbengine\kbe\tools\server")
+	sys.path.append(r"F:\\kbengine\\kbe\\tools\\server")
 	import pycommon.SpaceViews
 	import pycommon.Define
 	w = pycommon.SpaceViews.SpaceViewer(4)
@@ -113,7 +113,7 @@ class CellAppMgrViewer(ServerApp.ServerApp):
 	获取CellAppMgr中space信息
 	使用样例：
 	import sys
-	sys.path.append(r"F:\kbengine\kbe\tools\server")
+	sys.path.append(r"F:\\kbengine\\kbe\\tools\\server")
 	import pycommon.CellViews
 	import pycommon.Define
 	w = pycommon.CellViews.CellAppMgrViewer(4,1)
@@ -171,7 +171,7 @@ class CellViewer(ServerApp.ServerApp):
 	获取cellapp中entity信息
 	使用样例：
 	import sys
-	sys.path.append(r"F:\kbengine\kbe\tools\server")
+	sys.path.append(r"F:\\kbengine\\kbe\\tools\\server")
 	import pycommon.CellViews
 	import pycommon.Define
 	w = pycommon.CellViews.CellViewer(4,5)

@@ -304,16 +304,16 @@ bool Dbmgr::initializeEnd()
 		EntityDef::md5().getDigestStr()));
 	
 	SCOPED_PROFILE(SCRIPTCALL_PROFILE);
-
-	// 所有脚本都加载完毕
-	PyObject* pyResult = PyObject_CallMethod(getEntryScript().get(), 
-										const_cast<char*>("onDBMgrReady"), 
-										const_cast<char*>(""));
-
-	if(pyResult != NULL)
-		Py_DECREF(pyResult);
-	else
-		SCRIPT_ERROR_CHECK();
+	//
+	// // 所有脚本都加载完毕
+	// PyObject* pyResult = PyObject_CallMethod(getEntryScript().get(), 
+	// 									const_cast<char*>("onDBMgrReady"), 
+	// 									const_cast<char*>(""));
+	//
+	// if(pyResult != NULL)
+	// 	Py_DECREF(pyResult);
+	// else
+	// 	SCRIPT_ERROR_CHECK();
 
 	pTelnetServer_ = new TelnetServer(&this->dispatcher(), &this->networkInterface());
 	pTelnetServer_->pScript(&this->getScript());
@@ -324,7 +324,24 @@ bool Dbmgr::initializeEnd()
 
 	Components::getSingleton().extraData4(pTelnetServer_->port());
 	
-	return ret && initInterfacesHandler() && initDB();
+	// return ret && initInterfacesHandler() && initDB();
+	// 先初始化接口和数据库
+	if (ret && initInterfacesHandler() && initDB())
+	{
+		// 所有脚本都加载完毕，在数据库和接口初始化后调用
+		PyObject* pyResult = PyObject_CallMethod(getEntryScript().get(),
+			const_cast<char*>("onDBMgrReady"),
+			const_cast<char*>(""));
+
+		if (pyResult != NULL)
+			Py_DECREF(pyResult);
+		else
+			SCRIPT_ERROR_CHECK();
+
+		return true;
+	}
+
+	return false;
 }
 
 //-------------------------------------------------------------------------------------

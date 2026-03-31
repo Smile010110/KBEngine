@@ -80,28 +80,29 @@ export default class KBEEvent
 
     static Fire(eventName: string, ...params: any[]): void
     {
-        this._eventsOut.push({ eventName, params });
+        if(!this._isPause){
+            let eventList: Array<EventInfo> = this._events[eventName];
+            if(eventList === undefined)
+            {
+                // KBELog.DEBUG_MSG("Event::Fire:cant find event by name(%s).", eventName);
+                return;
+            }
 
-
-        // let eventList: Array<EventInfo> = this._events[eventName];
-        // if(eventList === undefined)
-        // {
-        //     // KBELog.DEBUG_MSG("Event::Fire:cant find event by name(%s).", eventName);
-        //     return;
-        // }
-
-        // for(let item of eventList)
-        // {
-        //     try
-        //     {
-        //         // 注意，传入参数和注册函数参数类型数量可以不一致，作为事件函数的参数类型检查没有作用
-        //         item.m_cbFunction.apply(item.m_object, params);
-        //     }
-        //     catch(e)
-        //     {
-        //         KBELog.ERROR_MSG("Event::Fire(%s):%s", eventName, e);
-        //     }
-        // }
+            for(let item of eventList)
+            {
+                try
+                {
+                    // 注意，传入参数和注册函数参数类型数量可以不一致，作为事件函数的参数类型检查没有作用
+                    item.m_cbFunction.apply(item.m_object, params);
+                }
+                catch(e)
+                {
+                    KBELog.ERROR_MSG("Event::Fire(%s):%s", eventName, e);
+                }
+            }
+        }else{
+            this._eventsOut.push({ eventName, params });
+        }
     }
 
     static processOutEvents(){

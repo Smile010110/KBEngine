@@ -97,6 +97,7 @@ kbe/src/libs/common_d.lib
 kbe/src/libs/db_interface_d.lib
 kbe/src/libs/db_mysql_d.lib
 kbe/src/libs/db_redis_d.lib
+kbe/src/libs/db_mongodb_d.lib
 kbe/src/libs/entitydef_d.lib
 kbe/src/libs/expat_d.lib
 kbe/src/libs/fmt_d.lib
@@ -166,6 +167,7 @@ kbe/src/libs/common.lib
 kbe/src/libs/db_interface.lib
 kbe/src/libs/db_mysql.lib
 kbe/src/libs/db_redis.lib
+kbe/src/libs/db_mongodb.lib
 kbe/src/libs/entitydef.lib
 kbe/src/libs/expat.lib
 kbe/src/libs/fmt.lib
@@ -201,4 +203,12 @@ balls_server_assets
 kbengine_demos_assets
 *server_assets*
 *demo*_assets*
-*base_assets*
+
+
+# webconsole
+/kbe/tools/server/webconsole/pycommon
+/kbe/tools/server/webconsole/db.sqlite3
+/kbe/tools/server/webconsole/*.pyc
+#/kbe/tools/server/webconsole/webconsole/migrations/
+#/kbe/tools/server/webconsole/cluster/migrations/
+#/kbe/tools/server/webconsole/component/migrations/

@@ -330,8 +330,8 @@
 				-->
 				<pure> false </pure>
 
-				<!-- 数据库类型 （mysql、redis）
-					（Database type(mysql, redis))
+				<!-- 数据库类型 （mysql、redis（已废弃）、mongodb）
+					（Database type(mysql, redis(deprecated), mongodb))
 				-->
 				<type> mysql </type>											<!-- Type: String -->
 

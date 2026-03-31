@@ -131,7 +131,6 @@ if defined VCPKG_PATH (
         exit /b 1
     )
     set "VCPKG_EXE=!VCPKG_PATH!\vcpkg.exe"
-    call "!VCPKG_PATH!\bootstrap-vcpkg.bat"
 
 )
 
@@ -145,40 +144,62 @@ if defined VCPKG_PATH (
 git -C "%USERPROFILE%\AppData\Local\kbe-vcpkg-gitee" reset --hard HEAD
 git -C "%USERPROFILE%\AppData\Local\kbe-vcpkg-gitee" pull
 
-set "ARCH=%PROCESSOR_ARCHITECTURE%"
 
-if not exist "!VCPKG_PATH!\downloads\tools\powershell-core-7.2.24-windows" (
 
-    if /i  not "%ARCH%"=="ARM64" (
 
-        @REM Check if PowerShell-7.2.24-win-x64.7z exists under ./downloads/tools, if so, extract with 7z located at ./downloads/tools/7zip-25.01-windows/7z.exe
-        if not exist "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64.7z" (
-            echo [Download] PowerShell-7.2.24-win-x64.7z ...
-            "%VCPKG_EXE%" download powershell
-            if errorlevel 1 (
-                echo [Error] PowerShell download failed
-                exit /b 1
-            )
-        )
+set DOWNLOADS_PATH=%USERPROFILE%\AppData\Local\kbe-vcpkg-gitee\downloads
 
-        if not exist "!VCPKG_PATH!\downloads\tools\powershell-core-7.2.24-windows" (
-            echo [Extract] PowerShell-7.2.24-win-x64 ...
-            "!VCPKG_PATH!\downloads\tools\7zip-25.01-windows\7z.exe" x "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64.7z" -o"!VCPKG_PATH!\downloads\tools" -y
-            if errorlevel 1 (
-                echo [Error] PowerShell extraction failed
-                exit /b 1
-            )
-
-            ren "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64" "powershell-core-7.2.24-windows"
-            if errorlevel 1 (
-                echo [Error] PowerShell rename failed
-                exit /b 1
-            )
-        )
-    )
+if not exist "%DOWNLOADS_PATH%" (
+    echo Downloads directory not found, cloning repository...
+    git clone -b v27x https://gitee.com/KBEngineLab/kbe-vcpkg-gitee-download.git "%DOWNLOADS_PATH%"
 ) else (
-    echo [Found] PowerShell already exists
+    if not exist "%DOWNLOADS_PATH%\.git" (
+        echo .git directory not found, removing existing downloads directory...
+        rmdir /s /q "%DOWNLOADS_PATH%"
+        echo Re-cloning repository...
+        git clone -b v27x https://gitee.com/KBEngineLab/kbe-vcpkg-gitee-download.git "%DOWNLOADS_PATH%"
+    ) else (
+        echo Downloads directory exists, updating...
+        git -C "%DOWNLOADS_PATH%" pull
+    )
 )
+
+
+@REM set "ARCH=%PROCESSOR_ARCHITECTURE%"
+set "PATH=!VCPKG_PATH!;%PATH%"
+
+@REM if not exist "!VCPKG_PATH!\downloads\tools\powershell-core-7.2.24-windows" (
+
+@REM     if /i  not "%ARCH%"=="ARM64" (
+
+@REM         @REM Check if PowerShell-7.2.24-win-x64.7z exists under ./downloads/tools, if so, extract with 7z located at ./downloads/tools/7zip-25.01-windows/7z.exe
+@REM         if not exist "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64.7z" (
+@REM             echo [Download] PowerShell-7.2.24-win-x64.7z ...
+@REM             "%VCPKG_EXE%" download powershell
+@REM             if errorlevel 1 (
+@REM                 echo [Error] PowerShell download failed
+@REM                 exit /b 1
+@REM             )
+@REM         )
+
+@REM         if not exist "!VCPKG_PATH!\downloads\tools\powershell-core-7.2.24-windows" (
+@REM             echo [Extract] PowerShell-7.2.24-win-x64 ...
+@REM             "!VCPKG_PATH!\downloads\tools\7zip-25.01-windows\7z.exe" x "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64.7z" -o"!VCPKG_PATH!\downloads\tools" -y
+@REM             if errorlevel 1 (
+@REM                 echo [Error] PowerShell extraction failed
+@REM                 exit /b 1
+@REM             )
+
+@REM             ren "!VCPKG_PATH!\downloads\tools\PowerShell-7.2.24-win-x64" "powershell-core-7.2.24-windows"
+@REM             if errorlevel 1 (
+@REM                 echo [Error] PowerShell rename failed
+@REM                 exit /b 1
+@REM             )
+@REM         )
+@REM     )
+@REM ) else (
+@REM     echo [Found] PowerShell already exists
+@REM )
 
 
 

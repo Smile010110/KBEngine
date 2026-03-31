@@ -140,7 +140,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../lib/python/PC;../../../lib/python/Include;../../../lib/python/Include/internal;../../../lib;../../../common;../../../lib/dependencies/g3dlite;../../../server;../../../lib/dependencies/mysql;../../../lib/dependencies;../../../lib/dependencies/vsopenssl/include;../../lib/dependencies/jsoncpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>FMT_HEADER_ONLY;USE_OPENSSL;ENABLE_WATCHERS;WIN32;_DEBUG;_CONSOLE;CODE_INLINE;KBE_USE_ASSERTS;USE_PYTHON;USE_KBE_MYSQL;LOG4CXX_STATIC;KBE_SERVER;KBE_CMD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_OPENSSL;ENABLE_WATCHERS;WIN32;_DEBUG;_CONSOLE;CODE_INLINE;KBE_USE_ASSERTS;USE_PYTHON;USE_KBE_MYSQL;LOG4CXX_STATIC;KBE_SERVER;KBE_CMD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -197,7 +197,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>../../../lib/python/PC;../../../lib/python/Include;../../../lib/python/Include/internal;../../../lib;../../../common;../../../lib/dependencies/g3dlite;../../../server;../../../lib/dependencies/mysql;../../../lib/dependencies;../../../lib/dependencies/vsopenssl/include;../../lib/dependencies/jsoncpp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>FMT_HEADER_ONLY;USE_OPENSSL;ENABLE_WATCHERS;WIN32;NDEBUG;_CONSOLE;CODE_INLINE;KBE_USE_ASSERTS;USE_PYTHON;USE_KBE_MYSQL;LOG4CXX_STATIC;KBE_SERVER;KBE_CMD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_OPENSSL;ENABLE_WATCHERS;WIN32;NDEBUG;_CONSOLE;CODE_INLINE;KBE_USE_ASSERTS;USE_PYTHON;USE_KBE_MYSQL;LOG4CXX_STATIC;KBE_SERVER;KBE_CMD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -225,6 +225,7 @@
     <ClCompile Include="..\..\..\lib\dependencies\vsopenssl\include\openssl\applink.c" />
     <ClCompile Include="client_sdk.cpp" />
     <ClCompile Include="client_sdk_csharp.cpp" />
+    <ClCompile Include="client_sdk_cxx.cpp" />
     <ClCompile Include="client_sdk_plugin.cpp" />
     <ClCompile Include="client_sdk_typescript.cpp" />
     <ClCompile Include="client_sdk_ue4.cpp" />
@@ -240,6 +241,7 @@
   <ItemGroup>
     <ClInclude Include="client_sdk.h" />
     <ClInclude Include="client_sdk_csharp.h" />
+    <ClInclude Include="client_sdk_cxx.h" />
     <ClInclude Include="client_sdk_plugin.h" />
     <ClInclude Include="client_sdk_typescript.h" />
     <ClInclude Include="client_sdk_ue4.h" />

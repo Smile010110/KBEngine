@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -34,17 +35,20 @@ namespace KBEngine
             return _webSocket;
         }
 
-        public override void  connectTo(string ip, int port, ConnectCallback callback, object userData)
+        public override void  connectTo(string ip, int port, ConnectCallback callback, object userData, Dictionary<string, string> domainMapping, Dictionary<int, int> portMapping)
         {
             if (valid())
                 throw new InvalidOperationException("Have already connected!");
 
-            if (!(new Regex(@"((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))")).IsMatch(ip))
-            {
-                IPHostEntry ipHost = Dns.GetHostEntry(ip);
-                ip = ipHost.AddressList[0].ToString();
-            }
+            // if (!(new Regex(@"((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))")).IsMatch(ip))
+            // {
+            //     IPHostEntry ipHost = Dns.GetHostEntry(ip);
+            //     ip = ipHost.AddressList[0].ToString();
+            // }
             
+            ip = domainMapping.ContainsKey(ip) ? domainMapping[ip] : ip;
+            port = portMapping.ContainsKey(port) ? portMapping[port] : port;
+
             if (KBEngineApp.app.getInitArgs().enableWSS)
             {
                 ip = "wss://" + ip;
