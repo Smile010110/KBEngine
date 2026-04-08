@@ -826,7 +826,7 @@ bool DBInterfaceMysql::processException(std::exception & e)
 }
 
 //-------------------------------------------------------------------------------------
-const char* DBInterfaceMysql::getAutoIncrementInit()
+const char* DBInterfaceMysql::getAutoIncrementInit() const
 {
 	DBInterfaceInfo* pDBInfo = g_kbeSrvConfig.dbInterface(name());
 	if (!pDBInfo)
@@ -838,6 +838,15 @@ const char* DBInterfaceMysql::getAutoIncrementInit()
 	}
 
 	return pDBInfo->db_autoIncrementInit;
+}
+
+//-------------------------------------------------------------------------------------
+bool DBInterfaceMysql::isAutoIncrementDBID() const
+{
+	const char* autoIncrementInit = getAutoIncrementInit();
+	return (autoIncrementInit != NULL &&
+			strlen(autoIncrementInit) > 0 &&
+			strcmp(autoIncrementInit, "0") != 0);
 }
 
 //-------------------------------------------------------------------------------------
