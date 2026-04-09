@@ -1,48 +1,60 @@
-# -*- coding: gb2312 -*-
+# -*- coding: utf-8 -*-
+
 """
-错误配置文件
+閿欒澶勭悊
 """
+
+from __future__ import annotations
+
+import sys
+import traceback
 
 from config import *
-import traceback
-import sys
 import xlsxtool as xt
 
+
 def except_hook(typ, val, tb):
-	"""
-	traceback处理,显示中文:失败
-	"""
-	pywinerr_list = []
-	sys.__excepthook__(typ, val, tb)
-	ex = "\n"
+    """
+    traceback 澶勭悊
+    """
+    sys.__excepthook__(typ, val, tb)
+    ex = "\n".join(traceback.format_exception(typ, val, tb))
+    if ex:
+        print(ex)
+    return False
 
-	for e in traceback.format_exception(typ, val, tb):
-		ex += e
 
-	pywinerr_pos = ex.find('com_error')
+def error_input(index, args=""):
+    print(f"ERROR{index}:{EXPORT_ERROR.get(index, '鏈煡閿欒')}")
+    if args:
+        if isinstance(args, (list, tuple)):
+            xt.inputList(list(args))
+        else:
+            print(args)
+    return
 
-	if pywinerr_pos > -1:
-		error_str =  ex[pywinerr_pos+len('com_error')+1:].strip()
-		xt.str2List(error_str[1:-1], pywinerr_list)
-	return False
-	#xt.inputList(pywinerr_list)
-			
-def error_input(index, args = ""):
-		print( "ERROR%d:%s"%(index, EXPORT_ERROR[index],) )
-		xt.inputList(args)
-		return
 
-def info_input(index, args = ""):
-	print( "INFO(%d):%s,"%(index, EXPORT_INFO[index],) )
-	xt.inputList(args)
+def info_input(index, args=""):
+    print(f"INFO({index}):{EXPORT_INFO.get(index, '')}")
+    if args:
+        if isinstance(args, (list, tuple)):
+            xt.inputList(list(args))
+        else:
+            print(args)
+
 
 class XlsxException(Exception):
-	"""
-	异常处理
-	"""
-	def __init__(self, index, msg = ""):
-		print( "ERROR%d:%s, %s"%(index, EXPORT_ERROR[index], xt.value_to_text(msg)) )
-		
-		sys.exit(1)
+    """
+    寮傚父澶勭悊
+    """
 
-xe  = XlsxException
+    def __init__(self, index, msg=""):
+        self.index = index
+        self.msg = msg
+        text = EXPORT_ERROR.get(index, "鏈煡閿欒")
+        super().__init__(f"ERROR{index}:{text}, {xt.value_to_text(msg)}")
+        print(f"ERROR{index}:{text}, {xt.value_to_text(msg)}")
+        sys.exit(1)
+
+
+xe = XlsxException

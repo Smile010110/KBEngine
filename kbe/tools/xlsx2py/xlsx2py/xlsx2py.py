@@ -1,567 +1,520 @@
-# -*- coding: gb2312 -*-
-import sys
-import re
-import os
-import string
-import signal
-import time
-import codecs
-import json
+# -*- coding: utf-8 -*-
 
-from ExcelTool import ExcelTool
+from __future__ import annotations
+
+import ast
+import copy
+import json
+import os
+import re
+import sys
+import time
+from typing import Any
+
+import pandas as pd
+
 from config import *
 import functions
-try:
-    import character
-except:
-    character = functions
 import xlsxtool
 import xlsxError
-import copy
 
-SYS_CODE = sys.getdefaultencoding()
+try:
+    import character
+except Exception:
+    character = functions
 
-def siginit(sigNum, sigHandler):
-    print("byebye")
-    sys.exit(1)
 
-signal.signal(signal.SIGINT, siginit)                       #Ctrl-c´¦Àí
-
-def hasFunc(funcName):
+def hasFunc(funcName: str) -> bool:
     return hasattr(character, funcName) or hasattr(functions, funcName)
 
-def getFunc(funcName):
+
+def getFunc(funcName: str):
     if hasattr(character, funcName):
         return getattr(character, funcName)
     return getattr(functions, funcName)
 
-g_dctDatas = {}
-g_fdatas = {}
 
-class xlsx2py(object):
+def is_empty(value: Any) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
+
+
+def normalize_cell(value: Any) -> str:
     """
-    ½«excelÊı¾İµ¼³öÎªpyÎÄ¼ş Ê¹ÓÃ¹ı³ÌĞèÒª½øĞĞ±àÂë×ª»»
+    ç»Ÿä¸€å•å…ƒæ ¼å€¼ä¸ºå­—ç¬¦ä¸²ï¼Œé¿å… pandas/numpy ç±»å‹å¹²æ‰°
     """
-    def __init__(self, infile, outfile):
-        sys.excepthook = xlsxError.except_hook                      #traceback´¦Àí,Ï£ÍûÊä³öÖĞÎÄ
-        self.infile = os.path.abspath(infile)                       #Ôİ´æexcelÎÄ¼şÃû
-        self.outfile = os.path.abspath(outfile)                     #dataÎÄ¼şÃû
-        return
+    if value is None:
+        return ""
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+        return str(value)
+    return str(value).strip()
 
-    def __initXlsx(self):
-        self.xbook = ExcelTool(self.infile)
 
-        while not self.xbook.getWorkbookEx():
-            xlsxtool.exportMenu(EXPORT_INFO_RTEXCEL, OCallback = self.resetXlsx)
+class Xlsx2Py:
+    """
+    ä¸€æ¬¡è¯»è¡¨ï¼ŒåŒæ—¶å¯¼å‡ºï¼š
+    1. æœåŠ¡ç«¯ data.py
+    2. å®¢æˆ·ç«¯ data.jsonï¼ˆè‡ªåŠ¨è¿‡æ»¤ [S] å­—æ®µï¼‰
+    """
 
-    def resetXlsx(self):
-        """
-        ÊäÈëO(other)µÄ»Øµ÷
-        ¹Ø±ÕÒÑ´ò¿ªµÄexcel£¬È»ºóÖØĞÂ´ò¿ª
-        """
-        self.xbook.getWorkbookEx()
+    def __init__(self, py_outfile: str, json_outfile: str, infiles: list[str]):
+        sys.excepthook = xlsxError.except_hook
 
-    def __initInfo(self):
-        self.__exportSheetIndex = []        #´æ´¢¿Éµ¼±íµÄË÷Òı
-        self.headerDict = {}                #µ¼³ö±íµÚÒ»ĞĞ×ªÎª×Öµä
-        self.mapDict = {}                   #´ú¶Ô±íÉú³ÉµÄ×Öµä(µÚÒ»ĞĞÊÇ´ú¶Ô±íËµÃ÷ºöÂÔ)
+        self.py_outfile = os.path.abspath(py_outfile)
+        self.json_outfile = os.path.abspath(json_outfile)
+        self.infiles = [os.path.abspath(p) for p in infiles]
 
-#####################Ö´ĞĞÖ÷Ìâ##########################
-    def run(self):
-        """
-        ´øÓĞ$µÄÁĞÊı¾İĞèÒª´ú¶Ô±í,Ê×ÏÈÉú³É´ú¶Ô×Öµä
-        """
-        self.__initXlsx()                       #³õÊ¼excelÏà¹Ø
-        self.__initInfo()                       #³õÊ¼µ¼±íÏà¹Ø
-        self.openFile()
-        self.sth4Nth()                          #½øÈëÏÂÒ»¸ö½×¶Î
-        self.constructMapDict()                 #Éú³É´ú¶Ô×Öµä
-        self.__onRun()
+        self.mapDict: dict[str, str] = {}
+        self.headerDict: dict[str, dict[int, Any]] = {}
+        self.sheet2Data: dict[str, list[tuple[str, pd.DataFrame]]] = {}
+        self.all_export_sheets: list[tuple[str, str, pd.DataFrame]] = []
 
-    def __onRun(self):
-        self.writeLines  = 0                    #¼ÇÂ¼ÒÑĞ´ÈëµÄexcelµÄĞĞÊı
-        self.parseDefineLine()                  #·ÖÎöÎÄ¼ş
+        self.g_dctDatas: dict[str, Any] = {}
+        self.g_fdatas: dict[str, str] = {}
 
-###############Ñ°ÕÒ´ú¶Ô±íºÍ±ê¼Çµ¼ÈëµÄ±í##################
-    def sth4Nth(self):
-        """
-        something for nothing, ´ú¶Ô±íºÍµ¼Èë±íĞèÒªÓĞ
-        """
-        for index in range(self.xbook.getSheetCount()):
-            sheetName = self.xbook.getSheetNameByIndex(index)
-            if sheetName == EXPORT_MAP_SHEET:
-                self.__onFindMapSheet(index)
-            if sheetName.startswith(EXPORT_PREFIX_CHAR):
-                self.__onFindExportSheet(index)
-        self.onSth4Nth()
+    # -----------------------------
+    # è¯»å– Excel
+    # -----------------------------
+    def load_all_excels(self):
+        self.workbooks: list[tuple[str, dict[str, pd.DataFrame]]] = []
 
-    def onSth4Nth(self):
-        """
-        """
-        if not hasattr(self, 'mapIndex'):
-            self.xlsxClear(EXPORT_ERROR_NOMAP)
+        for infile in self.infiles:
+            if not os.path.isfile(infile):
+                xlsxError.error_input(EXPORT_ERROR_NOEXISTFILE, (infile,))
+                continue
 
-        if len(self.__exportSheetIndex) == 0:
-            xlsxError.error_input(EXPORT_ERROR_NOSHEET)
+            print(f"å¼€å§‹å¯¼è¡¨:[{os.path.basename(infile)}]")
 
-        return
+            sheets = pd.read_excel(
+                infile,
+                sheet_name=None,
+                header=None,
+                dtype=object,
+                keep_default_na=False,
+            )
+            self.workbooks.append((infile, sheets))
 
-    def __onFindMapSheet(self, mapIndex):
-        self.mapIndex = mapIndex
-        return
-
-    def __onFindExportSheet(self, Eindex):
-        """
-        Íê±Ï
-        """
-        self.__exportSheetIndex.append(Eindex)
-
+    # -----------------------------
+    # æ„å»ºä»£å¯¹è¡¨
+    # -----------------------------
     def constructMapDict(self):
-        """
-        Éú³É´ú¶Ô×Öµä£¬ ´ú¶Ô±íÖ»ÓĞÒ»¸ö
-        """
-        mapDict = {}
-        sheet = self.xbook.getSheetByIndex(self.mapIndex)
-        if not sheet:
-            return
+        for infile, sheets in self.workbooks:
+            if EXPORT_MAP_SHEET not in sheets:
+                continue
 
-        for col in range(0, self.xbook.getRowCount(self.mapIndex)):
-            colValues = self.xbook.getColValues(sheet, col)
-            if colValues:
-                for v in  [e for e in colValues[1:] if e and isinstance(e, str) and e.strip()]:
-                    print (v)
-                    mapStr = v.replace('£º', ":")         #ÖĞÎÄ"£º"ºÍ":"
+            df = sheets[EXPORT_MAP_SHEET]
+            row_count, col_count = df.shape
+
+            for col in range(col_count):
+                for row in range(1, row_count):
+                    cell = df.iat[row, col]
+                    text = normalize_cell(cell)
+                    if not text:
+                        continue
+
+                    text = text.replace("ï¼š", ":")
                     try:
-                        k, v  = mapStr.split(":")
-                        k = str.strip(k)
-                        v = str.strip(v)
-                        mapDict[k] = v
-                    except Exception as errstr:
-                        print( "waring£ºĞèÒª¼ì²é´ú¶Ô±í µÚ%dÁĞ, err=%s"%(col , errstr))
-        self.__onConstruct(mapDict)
-        return
+                        k, v = text.split(":", 1)
+                        self.mapDict[k.strip()] = v.strip()
+                    except Exception as err:
+                        print(
+                            f"warning: ä»£å¯¹è¡¨è§£æå¤±è´¥ file={infile}, row={row + 1}, col={col + 1}, err={err}"
+                        )
 
-    def __onConstruct(self, mapDict):
+        if not self.mapDict:
+            raise xlsxError.xe(EXPORT_ERROR_NOMAP, "æ— ä»£å¯¹è¡¨æˆ–ä»£å¯¹è¡¨ä¸ºç©º")
+
+    # -----------------------------
+    # æ”¶é›†å¯¼å‡ºè¡¨
+    # -----------------------------
+    def collectExportSheets(self):
+        for infile, sheets in self.workbooks:
+            for sheet_name, df in sheets.items():
+                if not isinstance(sheet_name, str):
+                    continue
+                if sheet_name.startswith(EXPORT_PREFIX_CHAR):
+                    pure_sheet_name = sheet_name[1:]
+                    self.all_export_sheets.append((infile, pure_sheet_name, df))
+
+        if not self.all_export_sheets:
+            raise xlsxError.xe(EXPORT_ERROR_NOSHEET, "æ²¡æœ‰æ‰¾åˆ°ä»»ä½• @ å¼€å¤´çš„å¯¼å‡ºè¡¨")
+
+    # -----------------------------
+    # è¡¨å¤´è§£æ
+    # æ”¯æŒ:
+    #   name[!][funcInt]
+    #   name[!][funcInt][S]
+    # -----------------------------
+    def parse_header(self, sheet_name: str, df: pd.DataFrame):
+        if df.shape[0] < 1:
+            raise xlsxError.xe(EXPORT_ERROR_HEADER, (sheet_name, "ç©ºè¡¨"))
+
+        header_row = df.iloc[0].tolist()
+        parsed = {}
+        key_cols = []
+        en_names = []
+
+        for col_idx, raw in enumerate(header_row):
+            text = normalize_cell(raw)
+            if not text:
+                parsed[col_idx] = None
+                continue
+
+            name, signs, funcName, server_only = self.parse_header_cell(
+                text, sheet_name, col_idx + 1
+            )
+
+            converted_name = self._convert_key_name(name)
+
+            for s in signs:
+                if s not in EXPORT_ALL_SIGNS:
+                    raise xlsxError.xe(
+                        EXPORT_ERROR_NOSIGN, (sheet_name, 1, col_idx + 1, s)
+                    )
+
+            if EXPORT_SIGN_GTH in signs:
+                key_cols.append(col_idx)
+
+            if len(key_cols) > EXPORT_KEY_NUMS:
+                raise xlsxError.xe(EXPORT_ERROR_NUMKEY, (sheet_name, 1, col_idx + 1))
+
+            if converted_name in en_names:
+                raise xlsxError.xe(
+                    EXPORT_ERROR_REPEAT, (sheet_name, 1, col_idx + 1, converted_name)
+                )
+            en_names.append(converted_name)
+
+            if not hasFunc(funcName):
+                raise xlsxError.xe(
+                    EXPORT_ERROR_NOFUNC, (sheet_name, col_idx + 1, funcName)
+                )
+
+            parsed[col_idx] = {
+                "name": converted_name,
+                "signs": signs,
+                "func": funcName,
+                "server_only": server_only,
+            }
+
+        if len(key_cols) != EXPORT_KEY_NUMS:
+            raise xlsxError.xe(
+                EXPORT_ERROR_NOKEY,
+                (sheet_name, f"éœ€è¦{EXPORT_KEY_NUMS}ä¸ªä¸»é”®ï¼Œå®é™…{len(key_cols)}ä¸ª"),
+            )
+
+        self.headerDict[sheet_name] = parsed
+
+    def parse_header_cell(self, text: str, sheet_name: str, col_no: int):
         """
-        ´ú¶Ô×ÖµäÉú³ÉÍê±Ï
+        æ”¯æŒæ›´çµæ´»çš„è¡¨å¤´ï¼š
+            name[!][funcInt]
+            name[!][funcInt][S]
+            name[][funcStr][S]
+        è§£æè§„åˆ™ï¼š
+            - ç¬¬ä¸€ä¸ª '[' ä¹‹å‰æ˜¯å­—æ®µå
+            - åç»­ [] å—é‡Œï¼š
+                * åªåŒ…å« . $ ! çš„ï¼Œè§†ä¸º signs
+                * ç­‰äº S çš„ï¼Œè§†ä¸º server_only
+                * å…¶å®ƒè§†ä¸º funcName
         """
-        self.mapDict = mapDict
-        return
+        first_bracket = text.find("[")
+        if first_bracket == -1:
+            raise xlsxError.xe(EXPORT_ERROR_HEADER, (sheet_name, 1, col_no, text))
 
-#####################ÎÄ¼şÍ·¼ì²â#######################
-    def parseDefineLine(self):
-        self.__checkDefine()        #¼ì²é¶¨ÒåÊÇ·ñÕıÈ·
-        self.__checkData()          #¼ì²éÊı¾İÊÇ·ñ·ûºÏ¹æÔò
+        name = text[:first_bracket].strip()
+        blocks = re.findall(r"\[([^\]]*)\]", text[first_bracket:])
 
-    def __reCheck(self, head):
-        pattern = "(\w+)(\[.*])(\[\w+\])"
-        reGroups =re.compile(pattern).match(head)
+        if not name or len(blocks) < 2:
+            raise xlsxError.xe(EXPORT_ERROR_HEADER, (sheet_name, 1, col_no, text))
 
-        if not reGroups:
-            return ()
-        return reGroups.groups()
+        signs = ""
+        funcName = None
+        server_only = False
 
-    def __convertKeyName(self, name):
+        for block in blocks:
+            block = block.strip()
+            if block == "S":
+                server_only = True
+            elif all(ch in EXPORT_ALL_SIGNS for ch in block):
+                signs = block
+            elif funcName is None:
+                funcName = block
+            else:
+                # å¤šä½™å—ç›´æ¥æŠ¥é”™ï¼Œé¿å…æ­§ä¹‰
+                raise xlsxError.xe(EXPORT_ERROR_HEADER, (sheet_name, 1, col_no, text))
+
+        if funcName is None:
+            raise xlsxError.xe(EXPORT_ERROR_HEADER, (sheet_name, 1, col_no, text))
+
+        return name, signs, funcName, server_only
+
+    def _convert_key_name(self, name: str):
         try:
-            tname = eval(name)
-        except:
-            pass
-        else:
-            if type(tname) == int or type(tname) == float:
-                return tname
+            return ast.literal_eval(name)
+        except Exception:
+            return name
 
-        return name
+    # -----------------------------
+    # æŒ‰ dataName åˆ†ç»„
+    # -----------------------------
+    def build_sheet2data(self):
+        self.sheet2Data = {}
+        for infile, pure_sheet_name, df in self.all_export_sheets:
+            if pure_sheet_name not in self.mapDict:
+                continue
 
-    def __checkDefine(self):
+            dataName = self.mapDict[pure_sheet_name]
+            self.sheet2Data.setdefault(dataName, []).append((pure_sheet_name, df))
+
+    # -----------------------------
+    # è§£ææ•°æ®
+    # -----------------------------
+    def parse_all_data(self):
+        for dataName, sheet_list in self.sheet2Data.items():
+            if dataName not in self.g_dctDatas:
+                self.g_dctDatas[dataName] = {}
+
+            dctData = self.g_dctDatas[dataName]
+
+            for pure_sheet_name, df in sheet_list:
+                print(f"æ£€æµ‹æ–‡ä»¶å¤´: {pure_sheet_name}")
+                self.parse_header(pure_sheet_name, df)
+
+                parsed_rows = self.parse_sheet_rows(pure_sheet_name, df, dctData)
+                dctData.update(parsed_rows)
+
+            overFunc = self.mapDict.get("overFunc")
+            if overFunc:
+                func = getFunc(overFunc)
+                dctData = func(self.mapDict, self.g_dctDatas, dctData, dataName)
+
+            self.g_dctDatas[dataName] = dctData
+
+        self.build_global_defs()
+
+    def parse_sheet_rows(self, sheet_name: str, df: pd.DataFrame, dctData: dict):
         """
-        µÚÒ»ĞĞµÄ¸öÔªËØÊÇ·ñ·ûºÏ¶¨Òå¸ñÊ½"name[signs][func]"ÒÔ¼°keyÊÇ·ñ·ûºÏ¹æ¶¨
+        ç¬¬ 3 è¡Œå¼€å§‹æ˜¯æ•°æ®
+        Excel:
+            ç¬¬1è¡Œ å®šä¹‰
+            ç¬¬2è¡Œ ä¸­æ–‡
+            ç¬¬3è¡Œèµ· æ•°æ®
+        pandas:
+            0 å®šä¹‰
+            1 ä¸­æ–‡
+            2 èµ· æ•°æ®
         """
-        print(  "¼ì²âÎÄ¼şÍ·(µÚÒ»ĞĞ)ÊÇ·ñÕıÈ·" )
-        for index in self.__exportSheetIndex:
-            self.sheetKeys = []
-            headList = self.xbook.getRowValues(self.xbook.getSheetByIndex(index), EXPORT_DEFINE_ROW -1 )
-            enName = []                                         #¼ì²éÃüÃûÖØ¸´ÁÙÊ±±äÁ¿
-            reTuples = []
+        result = {}
+        headers = self.headerDict[sheet_name]
+        tempKeys = []
 
-            self.headerDict[index] = {}
-            for c, head in enumerate(headList):
-                if head is None or head.strip() == '':          #µ¼³ö±íµÄµÚÒ»ĞĞNone, ÔòÕâÒ»ÁĞ½«±»ºöÂÔ
-                    self.__onCheckSheetHeader(self.headerDict[index], c, None)
+        for row_idx in range(2, len(df)):
+            row_series = df.iloc[row_idx]
+            childDict = {}
+
+            for col_idx in range(len(row_series)):
+                header_info = headers.get(col_idx)
+                if header_info is None:
                     continue
 
-                reTuple = self.__reCheck(head)
+                raw_val = row_series.iloc[col_idx]
+                val = normalize_cell(raw_val)
 
-                if len(reTuple) == 3:                           #¶¨Òå±»·Ö²ğÎªÈı²¿·Ö:name, signs, func,signs¿ÉÒÔÊÇ¿Õ
-                    name, signs, funcName = reTuple[0], reTuple[1][1:-1], reTuple[2][1:-1]
-                    name = self.__convertKeyName(name)
-                    for s in signs:                             #·ûºÅ¶¨ÒåÊÇ·ñÔÚ¹æÔòÖ®ÄÚ
-                        if s not in EXPORT_ALL_SIGNS:
-                            self.xlsxClear(EXPORT_ERROR_NOSIGN, (EXPORT_DEFINE_ROW, c+1))
+                name = header_info["name"]
+                signs = header_info["signs"]
+                funcName = header_info["func"]
 
-                    if EXPORT_SIGN_GTH in signs:                #ÊÇ·ñÎªkey
-                        self.sheetKeys.append(c)
-
-                    if len(self.sheetKeys) > EXPORT_KEY_NUMS:   #keyÊÇ·ñ³¬¹ı¹æ¶¨µÄ¸öÊı
-                        self.xlsxClear(EXPORT_ERROR_NUMKEY, (EXPORT_DEFINE_ROW, c+1))
-
-                    if name not in enName:                      #name²»ÄÜÖØ¸´
-                        enName.append(name)
-                    else:
-                        self.xlsxClear(EXPORT_ERROR_REPEAT, \
-                        (self.xbook.getSheetNameByIndex(index).encode(FILE_CODE), EXPORT_DEFINE_ROW, c+1))
-
-                    if not hasFunc(funcName):                   #funcNameÊÇ·ñ´æÔÚ
-                        self.xlsxClear(EXPORT_ERROR_NOFUNC, (xlsxtool.toGBK(funcName), c+1))
-
+                if "$" in signs and val:
+                    if val not in self.mapDict:
+                        raise xlsxError.xe(
+                            EXPORT_ERROR_NOTMAP, ((row_idx + 1, col_idx + 1), val)
+                        )
+                    v = self.mapDict[val]
                 else:
-                    self.xlsxClear(EXPORT_ERROR_HEADER, (self.xbook.getSheetNameByIndex(index).encode(FILE_CODE), EXPORT_DEFINE_ROW, c+1))
+                    v = val
 
-                self.__onCheckSheetHeader(self.headerDict[index], c, (name, signs, funcName))   #¶¨ÒåÒ»ĞĞ¾­³£Ê¹ÓÃ´æÆğÀ´ÁË
+                if "." in signs and (v is None or str(v) == ""):
+                    raise xlsxError.xe(
+                        EXPORT_ERROR_NOTNULL, ((row_idx + 1, col_idx + 1), name)
+                    )
 
-            self.__onCheckDefine()
+                func = getFunc(funcName)
+                try:
+                    v = func(self.mapDict, dctData, childDict, v)
+                except Exception as err:
+                    raise xlsxError.xe(
+                        EXPORT_ERROR_FUNC,
+                        (str(err), funcName, v, row_idx + 1, col_idx + 1),
+                    )
 
-        return
+                if "!" in signs:
+                    if v in tempKeys:
+                        raise xlsxError.xe(
+                            EXPORT_ERROR_REPKEY, ((row_idx + 1, col_idx + 1), v)
+                        )
+                    tempKeys.append(v)
 
-    def __onCheckSheetHeader(self, DataDict, col, headerInfo):
-        DataDict[col] = headerInfo
+                childDict[name] = v
 
-    def __onCheckDefine(self):
-        if len(self.sheetKeys) != EXPORT_KEY_NUMS:                  #keyÒ²²»ÄÜÉÙ
-            self.xlsxClear(EXPORT_ERROR_NOKEY, ("ĞèÒª%d¶øÖ»ÓĞ%d"%(EXPORT_KEY_NUMS,len(self.sheetKeys))))
+            if not childDict:
+                continue
 
-        print( "ÎÄ¼şÍ·¼ì²âÕıÈ·", time.ctime(time.time()) )
+            key = tempKeys[-1]
+            result[key] = copy.deepcopy(childDict)
+            print(f"å½“å‰:{row_idx + 1}/{len(df)}")
 
-    def sheetIndex2Data(self):
-        self.sheet2Data = {}
-        for index in self.__exportSheetIndex:
-            SheetName = self.xbook.getSheetNameByIndex(index)
-            sheetName = SheetName[SheetName.find(EXPORT_PREFIX_CHAR)+1:]
-            if sheetName in self.mapDict:
-                dataName = self.mapDict[sheetName]
-                if dataName in self.sheet2Data:
-                    self.sheet2Data[dataName].append(index)
-                else:
-                    self.sheet2Data[dataName] =  [index]
+        return result
 
-    def __checkData(self):
-        """
-        ÁĞÊı¾İÊÇ·ñ·ûºÏÃüÃû¹æ·¶, Éú³ÉËùĞè×Öµä
-        """
-        self.sheetIndex2Data()
-        self.dctDatas = g_dctDatas
-        self.hasExportedSheet = []
+    # -----------------------------
+    # ç”Ÿæˆ globalDefs / allDataDefs
+    # -----------------------------
+    def build_global_defs(self):
+        globalDefs = self.mapDict.get("globalDefs", "")
+        if globalDefs:
+            func = getFunc(globalDefs)
+            content = func(self.g_dctDatas) if callable(func) else ""
+            if content:
+                self.g_fdatas["globalDefs"] = content + "\n"
 
-        for dataName, indexList  in self.sheet2Data.items():
-            self.curIndexMax = len(indexList)
-            self.curProIndex = []
-            for index in indexList:
-                sheet = self.xbook.getSheetByIndex(index)
-                self.curProIndex.append(index)
-
-                cols =  self.xbook.getRowCount(index)
-                rows  = self.xbook.getColCount(index)
-                if dataName not in self.dctDatas:
-                    self.dctDatas[dataName] = {}
-                self.dctData = self.dctDatas[dataName]
-
-                for row in range(3,  rows + 1):
-                    rowval = self.xbook.getRowValues(sheet, row - 1)
-                    childDict = {}
-                    for col in range(1, cols + 1):
-                        val = rowval[col - 1]
-                        if val != None:
-                            val = (str(rowval[col - 1]),)
-                        else:
-                            val = ("",)
-                        #val = (self.xbook.getText(sheet, row, col),)
-                        if self.headerDict[index][col-1] is None:
-                            continue
-
-                        name, sign, funcName = self.headerDict[index][col-1]
-                        if '$' in sign and len(val[0]) > 0:
-                            self.needReplace({'v':val[0], "pos":(row, col)})
-                            v = self.mapDict[xlsxtool.GTOUC(xlsxtool.val2Str(val[0]))]  #mapDict:keyÊÇunicode.key¶¼Òª×ª³Éunicode
-                        else:
-                            v = val[0]
-                        if EXPORT_SIGN_DOT in sign and v is None:
-                            self.xlsxClear(EXPORT_ERROR_NOTNULL, (col, row))
-
-                        try:
-                            sv = v#xlsxtool.toGBK(v)
-                        except:
-                            sv = v
-
-                        func = getFunc(funcName)
-
-                        try:
-                            v = func(self.mapDict, self.dctData, childDict, sv)
-                        except Exception as errstr:
-                            self.xlsxClear(EXPORT_ERROR_FUNC, (errstr, funcName, sv, row, col))
-                            
-                        for ss in sign.replace('$',''):
-                            EXPORT_SIGN[ss](self,{"v":v,"pos":(row, col)})
-
-                        #if isinstance(v, (isinstance, unicode)):
-                        #   try:
-                        #       v = v.decode("gb2312").encode("utf-8")
-                        #   except:
-                        #       pass
-                        childDict[name] = v
-
-                    print( "µ±Ç°:%i/%i" % (row, rows) )
-                    self.dctData[self.tempKeys[-1]] = copy.deepcopy(childDict)
-
-                self.writeHead()
-
-            overFunc = self.mapDict.get('overFunc')
-            if overFunc is not None:
-                func = getFunc(overFunc)
-                self.dctData = func(self.mapDict, self.dctDatas, self.dctData, dataName)
-                self.dctDatas[dataName] = self.dctData
-            
-            g_dctDatas.update(self.dctDatas)
-            self.__onCheckSheet()
-            
-        self.__onCheckData()
-        self.writeFoot()
-
-    def __onCheckSheet(self):
-        if hasattr(self, "tempKeys"):
-            del self.tempKeys
-        return
-
-    def __onCheckData(self):
-        self.exportSheet()
-
-##############·ûºÅ×ÖµäµÄÏà¹ØÉèÖÃEXPORT_SIGN###################
-    def isNotEmpty(self, cellData):
-        if cellData['v'] is None:
-            self.xlsxClear(EXPORT_ERROR_NOTNULL, (cellData['pos'], ))
-
-    def needReplace(self, cellData):
-        """ºêÌæ´ú"""
-        v = cellData["v"].strip()
-
-        if isinstance(v, float):    #·ÀÖ¹Êı×Ö±¨´í(1:string) mapDict ÊÇunicode×Ö·û´®
-            v = str(int(v))
-
-        if v not in self.mapDict:   #¼ì²â¶ø²»Ìæ»»
-            self.xlsxClear(EXPORT_ERROR_NOTMAP, (cellData['pos'], v))
-
-    def isKey(self, cellData):
-        if not hasattr(self, "tempKeys"):
-            self.tempKeys = []
-
-        if cellData['v'] not in self.tempKeys:
-            self.tempKeys.append(cellData['v'])
-        else:
-            self.xlsxClear(EXPORT_ERROR_REPKEY, (cellData['pos'], \
-                (self.tempKeys.index(cellData['v'])+3, cellData['pos'][1] ), cellData['v']) )
-
-
-
-
-###############export to  py²¿·Ö######################
-    def exportSheet(self):
-        """
-        µ¼³ö
-        """
-        self.__onExportSheet()
-        return
-
-    def __onExportSheet(self):
-        """
-        Êı¾İ×ª³ÉpyÎÄ¼ş
-        """
-        self.writeXLSX2PY()
-        return
-
-    def openFile(self):
-        """
-        ÎÄ¼şÄ¿Â¼´´½¨
-        """
-        dirPath = os.path.split(self.outfile)[0]
-
-        if not os.path.isdir(dirPath):
-            try:
-                xlsxtool.createDir(dirPath)
-            except:
-                self.xlsxClear(EXPORT_ERROR_CPATH, (dirPath, ))
-        try:
-            fileHandler = codecs.open(self.outfile, "w+",'utf-8')
-            #fileHandler = open(self.outfile, "w+")
-        except:
-            self.xlsxClear(EXPORT_ERROR_FILEOPEN, (self.outfile, ))
-
-        self.__onOpenFile(fileHandler)      #Ä¿Â¼´´½¨³É¹¦,ÎÄ¼ş´ò¿ª
-        return
-
-    def __onOpenFile(self,  fileHandler):
-        """
-        pyÎÄ¼ş´ò¿ªÁË,¿ÉÒÔĞ´ÎÄ¼şÁË
-        """
-        self.fileName = self.outfile
-        self.fileHandler = fileHandler
-        del self.outfile
-
-    def xlsxWrite(self, stream):
-        """
-        Ğ´ÈëdataÎÄ¼ş
-        """
-        if not hasattr(self, "fileHandler"):
-            self.xlsxClear(EXPORT_ERROR_FILEOPEN, ())
-        try:
-            self.fileHandler.write(stream)
-        except Exception as errstr:
-            self.xlsxClear(EXPORT_ERROR_IOOP, (errstr))
-
-    def writeXLSX2PY(self):
-        """
-        ÎÄ¼ş Ç°¼¸ĞĞÎÄ×Ö
-        """
-        self.writeBody()
-        return
-
-    def writeHead(self):
-        print( "¿ªÊ¼Ğ´ÈëÎÄ¼ş:", time.ctime(time.time()) )
-        try:
-            SheetName = self.xbook.getSheetNameByIndex(self.curProIndex[-1])
-        except:
-            print( "»ñÈ¡±íµÄÃû×Ö³ö´í" )
-
-        sheetName = SheetName[SheetName.find(EXPORT_PREFIX_CHAR)+1:]
-        if sheetName in self.mapDict:
-            dataName = self.mapDict[sheetName]
-            self.hasExportedSheet.append(self.curProIndex[-1])
-        else:
-            self.xlsxClear(2, (sheetName.encode(FILE_CODE),))
-
-        stream  = ""
-        dataFileInfo = (self.infile + '.' + SheetName).encode("UTF-8")
-
-        if len(self.hasExportedSheet) <= 1:
-            stream =  EXPORT_DATA_HEAD
-            globalDefs = self.mapDict.get('globalDefs', '')
-            if len(globalDefs) > 0:
-                func = getFunc(globalDefs)
-                globalDefs = func(self.dctData)
-                if len(globalDefs) > 0:
-                    globalDefs += "\n"
-                    if "globalDefs" in g_fdatas:
-                        g_fdatas["globalDefs"] += globalDefs
-                    else:
-                        g_fdatas["globalDefs"] = globalDefs
-
-
-    def writeBody(self):
-        #for index  in self.curProIndex:
-        #   xlsxError.info_input(EXPORT_INFO_ING, (self.xbook.getSheetNameByIndex(index).encode(FILE_CODE), ))
-        self.xlsxWrite(EXPORT_DATA_HEAD)
-        if "globalDefs" in g_fdatas:
-            self.xlsxWrite(g_fdatas["globalDefs"])
-
-        for dataName, datas in g_dctDatas.items():
-            stream = dataName + "="
-            #stream += xlsxtool.dict_to_text(datas) + "\n"
-            stream += "%s\n" % (datas)
-            self.xlsxWrite(stream)
-            jsonhandle = codecs.open(self.fileHandler.stream.name + "." + dataName + ".json", "w+",'utf-8')
-            s = json.dumps(datas)
-            jsonhandle.write("{%s}" % (s[1:-1]))
-            jsonhandle.close()
-            
-    def writeFoot(self):
-        """
-        ÎÄ¼şÎ²
-        """
-        if len(self.hasExportedSheet) < len(self.__exportSheetIndex):
-            return
-
-        allDataDefs = self.mapDict.get('allDataDefs', '')
-        if len(allDataDefs) > 0:
+        allDataDefs = self.mapDict.get("allDataDefs", "")
+        if allDataDefs:
             func = getFunc(allDataDefs)
-            allDataDefs = func(self.dctData)
-            if "allDataDefs" in g_fdatas:
-                    g_fdatas["allDataDefs"] += allDataDefs
-            else:
-                    g_fdatas["allDataDefs"] = allDataDefs
+            content = func(self.g_dctDatas) if callable(func) else ""
+            if content:
+                self.g_fdatas["allDataDefs"] = content
 
-        stream = "\nallDatas = {\n"
-        for dataName, indexList in self.sheet2Data.items():
-            for index in indexList:
-                SheetName = self.xbook.getSheetNameByIndex(index)
-                sheetName = SheetName[SheetName.find(EXPORT_PREFIX_CHAR)+1:]
-                stream += "\t'" +  sheetName
-                stream += "':"
-                stream += dataName
-                stream += ",\n"
+    # -----------------------------
+    # å¯¼å‡ºæœåŠ¡ç«¯ py
+    # -----------------------------
+    def export_py(self):
+        py_dir = os.path.dirname(self.py_outfile)
+        if py_dir:
+            os.makedirs(py_dir, exist_ok=True)
 
-        if len(allDataDefs) > 0:
-            stream += "\t" + g_fdatas["allDataDefs"] + ",\n"
+        print("å¼€å§‹å†™æœåŠ¡ç«¯ py:", self.py_outfile)
+        with open(self.py_outfile, "w", encoding="utf-8") as f:
+            f.write(EXPORT_DATA_HEAD)
 
-        stream +="}"
-        self.xlsxWrite(stream)
-        self.xlsxbyebye()
-        print( "Ğ´ÍêÁËtime:", time.ctime(time.time()) )
+            if "globalDefs" in self.g_fdatas:
+                f.write(self.g_fdatas["globalDefs"])
 
-##############ÆäËû##################
-    def xlsxClose(self):
+            for dataName, datas in self.g_dctDatas.items():
+                f.write(f"{dataName} = {repr(datas)}\n\n")
+
+            f.write("allDatas = {\n")
+            for dataName in self.g_dctDatas:
+                f.write(f"    '{dataName}': {dataName},\n")
+
+            if "allDataDefs" in self.g_fdatas:
+                f.write(f"    {self.g_fdatas['allDataDefs']},\n")
+
+            f.write("}\n")
+
+    # -----------------------------
+    # ä¸ºå®¢æˆ·ç«¯è¿‡æ»¤ [S] å­—æ®µ
+    # -----------------------------
+    def build_client_data(self):
+        client_all_datas = {}
+
+        for dataName, sheet_list in self.sheet2Data.items():
+            if dataName not in self.g_dctDatas:
+                continue
+
+            full_data = self.g_dctDatas[dataName]
+
+            # æ”¶é›†è¿™ä¸ª dataName ä¸‹æ‰€æœ‰ sheet çš„ server_only å­—æ®µ
+            server_only_fields = set()
+            for pure_sheet_name, _df in sheet_list:
+                headers = self.headerDict.get(pure_sheet_name, {})
+                for info in headers.values():
+                    if not info:
+                        continue
+                    if info.get("server_only"):
+                        server_only_fields.add(info["name"])
+
+            client_all_datas[dataName] = self.remove_server_fields(
+                full_data, server_only_fields
+            )
+
+        return client_all_datas
+
+    def remove_server_fields(self, data, server_only_fields: set):
         """
-        ¹Ø±ÕÎÄµµ
+        é€’å½’è¿‡æ»¤ dict ä¸­çš„ [S] å­—æ®µ
+        åªæŒ‰å­—æ®µåè¿‡æ»¤ï¼Œä¸æ”¹ list/tuple ç»“æ„
         """
-        if hasattr(self, "fileHandler"):
-            self.fileHandler.close()
+        if isinstance(data, dict):
+            new_data = {}
+            for k, v in data.items():
+                # åªè¿‡æ»¤â€œå­—æ®µåâ€
+                if isinstance(k, str) and k in server_only_fields:
+                    continue
+                new_data[k] = self.remove_server_fields(v, server_only_fields)
+            return new_data
 
-        self.xbook.close()
-        return
+        if isinstance(data, list):
+            return [self.remove_server_fields(v, server_only_fields) for v in data]
 
-    def xlsxClear(self, errno = 0, msg = ''):
-        """
-        ³ÌĞòÒì³£ÍË³öÇåÀí´ò¿ªµÄExcel
-        """
-        self.xlsxClose()
-        if errno > 0:
-            raise xlsxError.xe(errno, msg)
-        else:
-            sys.exit(1)
+        if isinstance(data, tuple):
+            return tuple(self.remove_server_fields(v, server_only_fields) for v in data)
 
-    def xlsxbyebye(self):
-        """
-        Õı³£ÍË³ö
-        """
-        self.xlsxClose()
-        return
+        return data
 
-    def getSheetsCounts(self):
-        return reduce(lambda x,y:x+y, \
-            [self.xbook.getColCount(index) for index in self.__exportSheetIndex])
+    # -----------------------------
+    # å¯¼å‡ºå®¢æˆ·ç«¯ json
+    # -----------------------------
+    def export_json(self):
+        json_dir = os.path.dirname(self.json_outfile)
+        if json_dir:
+            os.makedirs(json_dir, exist_ok=True)
 
-EXPORT_SIGN['.'] = xlsx2py.isNotEmpty
-EXPORT_SIGN['$'] = xlsx2py.needReplace
-EXPORT_SIGN['!'] = xlsx2py.isKey
+        client_data = self.build_client_data()
+
+        print("å¼€å§‹å†™å®¢æˆ·ç«¯ json:", self.json_outfile)
+        with open(self.json_outfile, "w", encoding="utf-8") as f:
+            json.dump(
+                {"allDatas": client_data},
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # -----------------------------
+    # ä¸»æµç¨‹
+    # -----------------------------
+    def run(self):
+        start = time.time()
+
+        self.load_all_excels()
+        self.constructMapDict()
+        self.collectExportSheets()
+        self.build_sheet2data()
+        self.parse_all_data()
+        self.export_py()
+        self.export_json()
+
+        cost = time.time() - start
+        print(f"å†™å®Œäº†ï¼Œç”¨æ—¶: {cost:.3f}s")
+
 
 def main():
     """
-    Ê¹ÓÃ·½·¨£º
-    python xlsx2py excelName.xls(x) data.py
+    ç”¨æ³•:
+        python xlsx2py.py data.py data.json excel.xlsx
+        python xlsx2py.py data.py data.json excel1.xlsx excel2.xlsx
     """
-    try:
-        outfile = sys.argv[1]
-    except:
-        print( main.__doc__ )
-        return
-    
-    for infile in sys.argv[2:]:
-        print( "¿ªÊ¼µ¼±í:[%s] max=%i" % (infile, len(sys.argv[2:])) )
-        if os.path.isfile(infile):
-            a = xlsx2py(infile, outfile)
-            xlsxtool.exportMenu(EXPORT_INFO_OK)
-            a.run()
-        else:
-            xlsxError.error_input(EXPORT_ERROR_NOEXISTFILE, (infile,))
-        print( '-------------------------------THE END------------------------------------------------' )
-    
-    sys.exit()
-    
-if __name__ == '__main__':
+    if len(sys.argv) < 4:
+        print(main.__doc__)
+        sys.exit(1)
+
+    py_outfile = sys.argv[1]
+    json_outfile = sys.argv[2]
+    infiles = sys.argv[3:]
+
+    tool = Xlsx2Py(py_outfile, json_outfile, infiles)
+    tool.run()
+
+
+if __name__ == "__main__":
     main()

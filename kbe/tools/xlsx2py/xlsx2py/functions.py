@@ -1,209 +1,241 @@
-# -*- coding: gb2312 -*-
-#
-import xlsxtool
+# -*- coding: utf-8 -*-
+
+"""
+é€šç”¨è½¬æ¢å‡½æ•°
+"""
+
+from __future__ import annotations
+
+import ast
+
+
+def _is_empty(data) -> bool:
+    return data is None or (isinstance(data, str) and len(data.strip()) == 0)
+
+
+def _safe_literal_eval(data, default=None):
+    if _is_empty(data):
+        return default
+    try:
+        return ast.literal_eval(str(data))
+    except Exception:
+        return default
+
+
 def funcPos2D(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØintÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    """
+    "x,z" -> (x, 0, z)
+    """
+    if _is_empty(data):
+        return ()
+    text = str(data)
+    arr = [x.strip() for x in text.split(",")]
+    if len(arr) != 2:
+        return ()
+    return int(arr[0]), 0, int(arr[1])
 
-	data = str(data)
-
-	return (int(data.split(",")[0]), 0, int(data.split(",")[1]))
 
 def funcInt(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØintÊı¾İ
-	"""
-	try:
-		v = eval(data)
-	except:
-		return 0
+    """
+    è¿”å› int æ•°æ®
+    """
+    if _is_empty(data):
+        return 0
+    value = _safe_literal_eval(data, data)
+    try:
+        return int(value)
+    except Exception:
+        return 0
 
-	v = int(v)
-
-	if type(v) != int:
-		return 0
-
-	return v
 
 def funcFloat(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØfloatÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return 0.0
+    """
+    è¿”å› float æ•°æ®
+    """
+    if _is_empty(data):
+        return 0.0
+    try:
+        return float(data)
+    except Exception:
+        return 0.0
 
-	return float(data)
 
 def funcStr(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»Ø×Ö·û´®Êı¾İ
-	"""
-	if data is None:
-		return ""
+    """
+    è¿”å›å­—ç¬¦ä¸²æ•°æ®
+    """
+    if data is None:
+        return ""
+    return str(data)
 
-	if type(data) == str:
-		return data
-	else:
-		data = str(data)
-		data = data.encode('utf8')
-		return str(data)
 
 def funcEval(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØevalÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ""
-	return eval(data)
+    """
+    è¿”å› literal_eval æ•°æ®
+    """
+    if _is_empty(data):
+        return ""
+    return _safe_literal_eval(data, str(data))
+
 
 def funcTupleInt(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    """
+    "1,2,3" -> (1,2,3)
+    """
+    if _is_empty(data):
+        return ()
+    text = str(data)
+    return tuple(int(e.strip()) for e in text.split(",") if e.strip())
 
-	data = str(data)
-
-	return tuple([int(e) for e in data.split(",") if len(e) > 0])
 
 def funcTupleFloat(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    """
+    "1.1,2.2" -> (1.1,2.2)
+    """
+    if _is_empty(data):
+        return ()
+    text = str(data)
+    return tuple(float(e.strip()) for e in text.split(",") if e.strip())
 
-	data = str(data)
 
-	return tuple([float(e) for e in data.split(",") if len(e) > 0])
-	
 def funcDict(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØdictÊı¾İ
-	"xx:1'2'3;fff:2'3'4"
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ''
-	
-	data = str(data)
-	dict1 = {}
-	for item in data.split(';'):
-		if item != '':
-			 e = item.split(':')
-			 if len(e) == 1:
-			 	 dict1[int(e[0])] = ()
-			 elif len(e) == 2:
-			 	 dict1[int(e[0])] = tuple([index for index in e[1].split('`') if index != ''])
+    """
+    "1:2`3`4;2:5`6"
+    -> {1: ('2','3','4'), 2: ('5','6')}
+    """
+    if _is_empty(data):
+        return ""
 
-	return dict1
+    text = str(data)
+    dict1 = {}
+    for item in text.split(";"):
+        item = item.strip()
+        if not item:
+            continue
+
+        e = item.split(":", 1)
+        if len(e) == 1:
+            dict1[int(e[0])] = ()
+        elif len(e) == 2:
+            dict1[int(e[0])] = tuple(index for index in e[1].split("`") if index != "")
+    return dict1
+
 
 def funcTupleStr(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    if _is_empty(data):
+        return ()
+    text = str(data)
+    return tuple(e.strip() for e in text.split(",") if e.strip())
 
-	data = str(data)
-	return tuple([e for e in data.split(",") if len(e) > 0])
 
 def funcTupleEval(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    if _is_empty(data):
+        return ()
+    text = str(data)
+    ret = []
+    for e in text.split(","):
+        e = e.strip()
+        if not e:
+            continue
+        ret.append(_safe_literal_eval(e, e))
+    return tuple(ret)
 
-	data = str(data)
-	return tuple([eval(e) for e in data.split(",") if len(e) > 0])
 
 def funcTupleEvalMD(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ Ê¹ÓÃ´ú¶Ô±í
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
-	
-	data = str(data)
-	try:
-		return tuple([eval(mapDict[e.decode("gb2312")]) for e in data.split(",") if len(e) > 0])
-	except Exception as errstr:
-		print( "º¯ÊıÖĞ·¢Éú´íÎó:%s" % errstr)
-		return ()
-	
-def funcTupleEval1(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØtupleÊı¾İ
-	1'100/2'100/3'54
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return ()
+    """
+    ä½¿ç”¨ä»£å¯¹è¡¨è½¬æ¢åå† literal_eval
+    """
+    if _is_empty(data):
+        return ()
 
-	data = str(data)
-	ret = []
-	for e in data.split("/"):
-		try:
-			i, v = e.split("'")
-		except Exception as errstr:
-			print( "º¯ÊıÖĞ·¢Éú´íÎó:%s" % errstr)
-			continue
-		ret.append((eval(i), eval(v)))
-	return tuple(ret)
-	
+    text = str(data)
+    try:
+        result = []
+        for e in text.split(","):
+            e = e.strip()
+            if not e:
+                continue
+            mapped = mapDict[e]
+            result.append(_safe_literal_eval(mapped, mapped))
+        return tuple(result)
+    except Exception as errstr:
+        print(f"å‡½æ•°ä¸­å‘ç”Ÿé”™è¯¯:{errstr}")
+        return ()
+
+
+def funcTupleEval1(mapDict, dctData, chilidDict, data):
+    """
+    "1'100/2'100/3'54" -> ((1,100),(2,100),(3,54))
+    """
+    if _is_empty(data):
+        return ()
+
+    text = str(data)
+    ret = []
+    for e in text.split("/"):
+        e = e.strip()
+        if not e:
+            continue
+        try:
+            i, v = e.split("'")
+            ret.append((_safe_literal_eval(i, i), _safe_literal_eval(v, v)))
+        except Exception as errstr:
+            print(f"å‡½æ•°ä¸­å‘ç”Ÿé”™è¯¯:{errstr}")
+            continue
+    return tuple(ret)
+
+
 def funcBool(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»Ø²¼¶ûÖµ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return False
-	return int(data) > 0
+    if _is_empty(data):
+        return False
+    try:
+        return int(float(str(data))) > 0
+    except Exception:
+        return False
+
 
 def funcNotBool(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØÈ¡·´µÄ²¼¶ûÖµ
-	"""
-	return not funcBool(mapDict, dctData, chilidDict, data)
+    return not funcBool(mapDict, dctData, chilidDict, data)
+
 
 def funcNull(mapDict, dctData, chilidDict, data):
-	"""
-	Ê²Ã´Ò²²»×ö Ö±½Ó·µ»Ø
-	"""
-	return data
+    return data
+
 
 def funcZipFloat(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØfloatÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return 0
+    """
+    float * 10000 -> int
+    """
+    if _is_empty(data):
+        return 0
+    try:
+        return int(float(data) * 10000)
+    except Exception:
+        return 0
 
-	return int(float(data) * 10000)
 
 def funcUNZipFloat(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»ØfloatÊı¾İ
-	"""
-	if data is None or (type(data) == str and len(data) == 0):
-		return 0.0
+    """
+    int / 10000 -> float
+    """
+    if _is_empty(data):
+        return 0.0
+    try:
+        return int(data) / 10000.0
+    except Exception:
+        return 0.0
 
-	return int(data) / 10000.0
-	
+
 def funcFlags(mapDict, dctData, chilidDict, data):
-	"""
-	·µ»Ø±ê¼Ç×éºÏÊı¾İ
-	±ÈÈç£º ÏëÔÚexcelÉÏÅäÖÃ±ê¼Ç×éºÏ
-	½ü³Ì¹¥»÷:0x00000001
-	Ô¶³Ì¹¥»÷:0x00000002
-	±©»÷:0x00000004
-	ÓÃ´Ëº¯Êı¿ÉÒÔÊä³ö¶à¸ö±ê¼Ç×é³ÉÒ»¸öuint32µÄÊı×Ö
-	"""
-	val = 0
-	for x in data.split(","):
-		if len(x) > 0:
-			val |= int(mapDict[x])
+    """
+    è¿”å›æ ‡è®°ç»„åˆæ•°æ®
+    """
+    if _is_empty(data):
+        return 0
 
-	return val
+    val = 0
+    for x in str(data).split(","):
+        x = x.strip()
+        if x:
+            val |= int(mapDict[x])
+    return val

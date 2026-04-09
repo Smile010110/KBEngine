@@ -1,227 +1,132 @@
-#-*- coding: gb2312 -*-
+# -*- coding: utf-8 -*-
+
 """
-¹¤¾ß
+å·¥å…·å‡½æ•°
 """
+
+from __future__ import annotations
+
 import os
-import sys
+from typing import Any
+
 import xlsxError
 from config import *
-from xml.dom.minidom import *
-
-def exportMenu(msgIndex, YCallback = None, NCallback = None, OCallback = None):
-	"""
-	¼òµ¥µÄÑ¯ÎÊY(yes),N(no)£¬ Y:pass£¬N£ºexit, Other:continue
-	now assume ÊäÈë Y
-	"""
-	if YCallback:
-		YCallback()
-	return
-
-	# xlsxError.info_input(msgIndex)
-	
-	# msg = "------------ÇëÊäÈëY(yes), N(no)"
-	# if OCallback:
-		# msg += ',other(o)'
-	
-	# print( msg,'------------------' )
-
-	# print( "ÄúµÄÊäÈë:" )
-
-	# input_command = raw_input()
-
-	# while(input_command):
-		# if input_command.lower() == "y" or input_command == '\r':
-			# if YCallback:YCallback()
-			# return 
-		# elif input_command.lower() == "n":
-			# if NCallback:NCallback()
-			# sys.exit(1)
-		
-		# elif input_command.lower() == "o":
-			# if OCallback:OCallback()
-			# return
-		# else:
-			# print( "ÊÇY»¹ÊÇN£º", )
-			# input_command = raw_input()
 
 
-def checkExtName(filePath, extName):
-	"""
-	¼ì²âÀ©Õ¹Ãû£¬Çë½«.Ò²¶ª½øÀ´
-	"""
-	if filePath == "" or extName == '':
-		return
+def exportMenu(msgIndex, YCallback=None, NCallback=None, OCallback=None):
+    """
+    åŸå·¥ç¨‹æ˜¯å‘½ä»¤è¡Œäº¤äº’ï¼Œè¿™é‡Œä¿æŒè‡ªåŠ¨ç»§ç»­
+    """
+    if YCallback:
+        YCallback()
+    return
 
-	fileName = os.path.split(filePath)[-1]
-	
-	return fileName.rfind(extName) >= 0
-		
 
-def __checkPath(dirPath):
-		"""
-		±ØĞëÓĞdriverName E:,D: ==
-		"""
-		driveName = os.path.splitdrive(dirPath)[0]
-		if not os.path.isdir(driveName):
-			raise xlsxError.xe(EXPORT_ERROR_CPATH, (dirPath, ))
+def checkExtName(filePath: str, extName: str) -> bool:
+    """
+    æ£€æµ‹æ‰©å±•åï¼Œè¯·æŠŠ . ä¹Ÿä¼ è¿›æ¥
+    """
+    if not filePath or not extName:
+        return False
+    return filePath.lower().endswith(extName.lower())
 
-		__onCheckPath(dirPath)
 
-		return
-		
-def __onCheckPath(dirPath):
-	"""
-	µİ¹é´´½¨Ä¿Â¼
-	"""
-	if not os.path.isdir(dirPath):
-		prvdir = os.path.split(dirPath)[0]
-		if not  os.path.isdir(prvdir):
-			__onCheckPath(prvdir)
-			
-		os.mkdir(dirPath)
+def createDir(dirPath: str) -> None:
+    try:
+        os.makedirs(dirPath, exist_ok=True)
+    except Exception:
+        raise xlsxError.xe(EXPORT_ERROR_CPATH, (dirPath,))
 
-def createDir(dirPath):
-	"""
-	´´½¨Ä¿Â¼
-	"""
-	__checkPath(dirPath)	
-	#__checkOkCreate(dirPath)
 
-	return
+def getFileMTime(fileName: str) -> float:
+    return os.stat(fileName).st_mtime
 
-def getFileMTime(fileName):
-	return os.stat(fileName)[-2]
 
-###########×Ö·û´®´¦Àí####################
+########### å­—ç¬¦ä¸²å¤„ç† ####################
 def inputList(var_list):
-	"""
-	"""
-	for element in var_list:
-		if isinstance(element, list):
-			inputList(element)
-		elif isinstance(element, str):
-			inputElement(element)
+    for element in var_list:
+        if isinstance(element, list):
+            inputList(element)
+        elif isinstance(element, str):
+            inputElement(element)
+        else:
+            print(element)
+
 
 def inputElement(element):
-	"""
-	¶Ô×Ö´®±àÂë´¦Àí
-	"""
-	if isinstance(element, str):
-		#element.strip().replace
-		print( element )#.encode(FILE_CODE),
-	#else:
-		#print( element),
+    if isinstance(element, str):
+        print(element)
+    else:
+        print(element)
 
-	return
 
 def str2List(error_str, pywinerr_list):
-	"""
-	×Ö·û´® -> list,²»¼ì²âÀ¨ºÅµÄÆ¥Åä
-	"""
-	begin_pos = error_str.find('(')
-	next_pos = error_str.find(')')
-	mid_pos = begin_pos
+    """
+    å…¼å®¹æ—§æ¥å£ï¼Œç®€å•æ‹†åˆ†
+    """
+    if not error_str:
+        return
+    for item in error_str.split(","):
+        pywinerr_list.append(item.strip())
 
-	if begin_pos > -1 and next_pos > -1:
-		pywinerr_list.append([])
-		suberr_list = pywinerr_list[-1]
 
-		while next_pos > -1:
-			mid_pos = error_str.find('(', mid_pos+1, next_pos)
-			if mid_pos > -1:
-				next_pos = error_str.find(')', next_pos+1)
-			else:
-				break
+def val2Str(data: Any) -> str:
+    if data is None:
+        return ""
+    if isinstance(data, float):
+        if data.is_integer():
+            return str(int(data))
+        return str(data)
+    if isinstance(data, bytes):
+        return data.decode("utf-8")
+    return str(data)
 
-		str2List(error_str[begin_pos+1:next_pos], suberr_list)
-		str2List(error_str[:begin_pos-1] + error_str[next_pos+1:], suberr_list)
 
-	else:
-		for strVal in error_str.split(","):
-			pywinerr_list.append(strVal)
-
-def val2Str(data):
-	if isinstance(data, float):
-		return str(int(data))
-	if isinstance(data, bytes):
-		return data.decode("utf-8")
-	else:
-		return data
-
-################################################			
+################################################
 def list_to_text(ls):
-	return tuple_to_text(ls)
-	
+    return repr(ls)
+
+
 def tuple_to_text(t):
-	text = '('
-	for x in t:		
-		v = value_to_text(x)
-		text += v + ', '
-		
-	text += ')'
-	
-	return text
+    return repr(t)
 
-depth = 1
+
 def dict_to_text(d):
-	text = '{'
-	for k, v in d.iteritems():
-		global depth
-		depth += 1
-		k = value_to_text(k)
-		v = value_to_text(v)
-		if v == 'None':
-			continue
-		if depth == 2:
-			text += '\t' + k + ':' + v + ',\n'
-		else:
-			text += k+ ':' +v + ","
-		depth -= 1
+    return repr(d)
 
-	text += '}'	
-	return text
 
 def value_to_text(v):
-	if isinstance(v, str):
-		return "'" + v.replace('\'', '\\\'') + "'"
-	if isinstance(v, bytes):
-		return v.decode("utf-8")
-	if isinstance(v, dict):
-		return dict_to_text(v)
-		
-	if isinstance(v, list):
-		return list_to_text(v)
-		
-	if isinstance(v, tuple):
-		return tuple_to_text(v)			
-	
-	return str(v)
+    if isinstance(v, bytes):
+        return repr(v.decode("utf-8"))
+    return repr(v)
 
-#######################code############################
+
+####################### code ############################
 def toGBK(val):
-	if isinstance(val, str):
-		return val.encode("utf-8")
-	return val
-	
+    """
+    ä¸ºå…¼å®¹æ—§æ¥å£ä¿ç•™ï¼ŒPython3 ä¸‹ä¸å†åš gbk è½¬æ¢
+    """
+    return val
+
+
 def GTOUC(val):
-	return val
-	
+    """
+    æ—§å·¥ç¨‹é‡Œç”¨äº gb2312 -> unicodeï¼Œè¿™é‡Œç›´æ¥è¿”å› str
+    """
+    if val is None:
+        return ""
+    if isinstance(val, bytes):
+        return val.decode("utf-8")
+    return str(val)
+
+
 def STOU(val):
-	"""
-	SYS_CODE -> utf-8
-	"""
-	return val
+    return val
+
 
 def UTOF(val):
-	"""
-	utf-8 -> FILE_CODE
-	"""
-	return val
+    return val
+
 
 def FTOU(val):
-	"""
-	FILE_CODE ->UTF-8
-	"""
-	return val
-
-
+    return val
