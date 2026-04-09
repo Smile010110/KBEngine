@@ -100,7 +100,7 @@ void Resmgr::updatePaths()
 	char splitFlag = ';';
 	strutil::kbe_split<char>(tbuf, splitFlag, respaths_);
 
-	// windows�û����ָܷ�ð�ţ� ���ܻ���̷����ָ���
+	// windows用户不能分割冒号， 可能会把盘符给分割了
 #if KBE_PLATFORM != PLATFORM_WIN32
 	if(respaths_.size() < 2)
 	{
@@ -137,7 +137,7 @@ bool Resmgr::initialize()
 	//if(isInit())
 	//	return true;
 
-	// ��ȡ���滷������
+	// 获取引擎环境配置
 	kb_env_.root_path		= getenv("KBE_ROOT") == NULL ? "" : getenv("KBE_ROOT");
 	kb_env_.res_path		= getenv("KBE_RES_PATH") == NULL ? "" : getenv("KBE_RES_PATH"); 
 	kb_env_.bin_path		= getenv("KBE_BIN_PATH") == NULL ? "" : getenv("KBE_BIN_PATH"); 
@@ -501,6 +501,9 @@ std::string Resmgr::getPyUserScriptsPath()
 		std::string::size_type pos = path.rfind("res");
 		path.erase(pos, path.size() - pos);
 		// path += "scripts/";
+		if(!isKBEngineNexAssets()) {
+			path += "scripts/";
+		}
 	}
 
 	return path;
@@ -621,4 +624,31 @@ void Resmgr::handleTimeout(TimerHandle handle, void * arg)
 }
 
 //-------------------------------------------------------------------------------------		
+
+
+bool Resmgr::isKBEngineNexAssets()
+{
+	// 1. 获取 entities.xml 的路径
+	std::string respath = matchRes("entities.xml");
+
+	// 2. 转小写，方便忽略大小写比较
+	std::string lowerRespath = respath;
+	std::transform(lowerRespath.begin(), lowerRespath.end(), lowerRespath.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+
+	// 3. 需要判断的后缀
+	const std::string suffix = "scripts/entities.xml";
+
+	// 4. 如果是以 scripts/entities.xml 结尾 → 返回 false
+	if (lowerRespath.size() >= suffix.size() &&
+		lowerRespath.compare(lowerRespath.size() - suffix.size(), suffix.size(), suffix) == 0)
+	{
+		return false;
+	}
+
+	// 5. 否则返回 true
+	return true;
+}
+
+
 }

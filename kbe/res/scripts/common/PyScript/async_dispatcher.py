@@ -7,12 +7,22 @@ from KBEDebug import *
 loop = asyncio.new_event_loop()
 # pending_tasks = []
 loop_started = threading.Event()  # 事件同步器
+shutdown_requested = threading.Event()
+lock = threading.Lock()
+
 
 def start_loop():
     asyncio.set_event_loop(loop)
-    DEBUG_MSG("[asyncio] Event loop started")
+    INFO_MSG("[asyncio] Event loop started")
     loop_started.set()  # 通知已准备好
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    except Exception as e:
+        ERROR_MSG(f"[asyncio] Event loop exception: {e}")
+    finally:
+        INFO_MSG("[asyncio] Event loop stopping...")
+        loop.close()
+        INFO_MSG("[asyncio] Event loop stopped")
 
 # 启动线程
 threading.Thread(target=start_loop, daemon=True).start()
@@ -40,4 +50,20 @@ def onAsyncTimer(timerID):
     定时器，Python保活
     """
     pass
-    
+
+def shutdown():
+    """
+    安全关闭 asyncio loop：
+    1. 取消所有 coroutine
+    2. 停止事件循环
+    """
+    if shutdown_requested.is_set():
+        return  # 避免重复 shutdown
+
+    shutdown_requested.set()
+    INFO_MSG("[asyncio] Shutdown initiated...")
+
+
+    # 停止 loop
+    if loop.is_running():
+        loop.call_soon_threadsafe(loop.stop)

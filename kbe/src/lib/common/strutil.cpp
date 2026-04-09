@@ -94,12 +94,103 @@ namespace strutil {
 		return s;
 	}
 
-	std::string kbe_trim(std::string s) 
+	std::string kbe_trim(std::string s)
 	{
 		return kbe_ltrim(kbe_rtrim(s));
 	}
 
-	// �ַ����滻
+	// 判断是否是空白字符（支持中英文空格）
+	inline bool is_space(char32_t ch)
+	{
+		return ch == U'\u0020'   // 半角空格
+			|| ch == U'\u3000'   // 中文全角空格
+			|| ch == U'\t'       // Tab
+			|| ch == U'\n'       // 换行
+			|| ch == U'\r';      // 回车
+	}
+
+	// UTF-8 -> UTF-32
+	std::u32string utf8_to_u32(const std::string& s)
+	{
+		std::u32string out;
+		size_t i = 0;
+		while (i < s.size()) {
+			unsigned char c = s[i];
+			char32_t cp = 0;
+			size_t extra = 0;
+
+			if (c < 0x80) {
+				cp = c;
+			}
+			else if ((c >> 5) == 0x6) {
+				cp = c & 0x1F;
+				extra = 1;
+			}
+			else if ((c >> 4) == 0xE) {
+				cp = c & 0x0F;
+				extra = 2;
+			}
+			else if ((c >> 3) == 0x1E) {
+				cp = c & 0x07;
+				extra = 3;
+			}
+			i++;
+			for (size_t j = 0; j < extra && i < s.size(); j++, i++) {
+				cp = (cp << 6) | (s[i] & 0x3F);
+			}
+			out.push_back(cp);
+		}
+		return out;
+	}
+
+	// UTF-32 -> UTF-8
+	std::string u32_to_utf8(const std::u32string& s)
+	{
+		std::string out;
+		for (char32_t cp : s) {
+			if (cp < 0x80) {
+				out.push_back(static_cast<char>(cp));
+			}
+			else if (cp < 0x800) {
+				out.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+				out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+			else if (cp < 0x10000) {
+				out.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+				out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+				out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+			else {
+				out.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+				out.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+				out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+				out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+		}
+		return out;
+	}
+
+	// trim 中文支持
+	std::string kbe_unicodeTrim(const std::string& s)
+	{
+		std::u32string u32 = utf8_to_u32(s);
+
+		size_t start = 0;
+		while (start < u32.size() && is_space(u32[start])) {
+			start++;
+		}
+
+		size_t end = u32.size();
+		while (end > start && is_space(u32[end - 1])) {
+			end--;
+		}
+
+		std::u32string result = u32.substr(start, end - start);
+		return u32_to_utf8(result);
+	}
+
+
+
 	int kbe_replace(std::string& str,  const std::string& pattern,  const std::string& newpat) 
 	{ 
 		int count = 0; 
@@ -191,24 +282,60 @@ namespace strutil {
 		}
 	};
 
+	// wchar_t* char2wchar(const char* cs, size_t* outlen)
+	// {
+	// 	int len = (int)((strlen(cs) + 1) * sizeof(wchar_t));
+	// 	wchar_t* ccattr =(wchar_t *)malloc(len);
+	// 	memset(ccattr, 0, len);
+
+	// 	size_t slen = mbstowcs(ccattr, cs, len);
+
+	// 	if (outlen)
+	// 	{
+	// 		if ((size_t)-1 != slen)
+	// 			*outlen = slen;
+	// 		else
+	// 			*outlen = 0;
+	// 	}
+		
+	// 	return ccattr;
+	// };
+
+
+
+	// 修复g++ 13 下，溢出的问题
+	// 目前测试下来Ubuntu 24会报 *** buffer overflow detected ***: terminated
 	wchar_t* char2wchar(const char* cs, size_t* outlen)
 	{
-		int len = (int)((strlen(cs) + 1) * sizeof(wchar_t));
-		wchar_t* ccattr =(wchar_t *)malloc(len);
-		memset(ccattr, 0, len);
+		if (!cs) return nullptr;
 
-		size_t slen = mbstowcs(ccattr, cs, len);
+		// 字符串长度（字节）
+		size_t csl = strlen(cs);
 
-		if (outlen)
-		{
-			if ((size_t)-1 != slen)
+		// wchar_t 个数 = 字符数 + 1（\0）
+		size_t wlen = csl + 1;
+
+		// 分配空间：按 wchar_t 数组大小
+		wchar_t* ccattr = (wchar_t*)malloc(wlen * sizeof(wchar_t));
+		if (!ccattr) {
+			if (outlen) *outlen = 0;
+			return nullptr;
+		}
+		memset(ccattr, 0, wlen * sizeof(wchar_t));
+
+		// mbstowcs 的第三个参数是 wchar_t 个数（不是字节数）
+		size_t slen = mbstowcs(ccattr, cs, wlen);
+
+		if (outlen) {
+			if (slen != (size_t)-1)
 				*outlen = slen;
 			else
 				*outlen = 0;
 		}
-		
+
 		return ccattr;
-	};
+	}
+
 
 	/*
 	int wchar2utf8(const wchar_t* in, int in_len, char* out, int out_max)   

@@ -167,7 +167,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -178,7 +178,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -191,7 +191,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 		script::entitydef::uninstallModule();
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -221,7 +221,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 		compressionType = 1;
 	}
 
-	// Èç¹û¼ì²âµ½ÉèÖÃÁËzipÎÄ¼ş£¬ÄÇÃ´´ÓzipÎÄ¼şµÃµ½path
+	// å¦‚æœæ£€æµ‹åˆ°è®¾ç½®äº†zipæ–‡ä»¶ï¼Œé‚£ä¹ˆä»zipæ–‡ä»¶å¾—åˆ°path
 	if (compressionfile.size() > 0)
 	{
 		std::vector<std::string> tmpvec;
@@ -258,7 +258,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 		ret = -1;
 	}
 
-	// ¿ªÊ¼´ò°ü
+	// å¼€å§‹æ‰“åŒ…
 	if (compressionfile.size() > 0)
 	{
 		if (compressionType == 1)
@@ -289,7 +289,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 	app.finalise();
 	INFO_MSG(fmt::format("{}({}) has shut down. ClientSDK={}\n", COMPONENT_NAME_EX(g_componentType), g_componentID, (pClientSDK ? pClientSDK->good() : false)));
 
-	// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+	// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 	DebugHelper::getSingleton().finalise();
 
 	if(pClientSDK)
@@ -300,7 +300,7 @@ int process_make_client_sdk(int argc, char* argv[], const std::string clientType
 
 int process_newassets(int argc, char* argv[], const std::string assetsType)
 {
-	// ¸ù¾İassetsTypeÉèÖÃKBE_RES_PATHµÄÏîÄ¿»·¾³±äÁ¿
+	// æ ¹æ®assetsTypeè®¾ç½®KBE_RES_PATHçš„é¡¹ç›®ç¯å¢ƒå˜é‡
 	std::string res_path = getenv("KBE_RES_PATH") == NULL ? "" : getenv("KBE_RES_PATH");
 	std::string root_path = getenv("KBE_ROOT") == NULL ? "" : getenv("KBE_ROOT");
 
@@ -352,7 +352,7 @@ int process_newassets(int argc, char* argv[], const std::string assetsType)
 
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -363,7 +363,7 @@ int process_newassets(int argc, char* argv[], const std::string assetsType)
 
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -376,7 +376,7 @@ int process_newassets(int argc, char* argv[], const std::string assetsType)
 		script::entitydef::uninstallModule();
 		app.finalise();
 
-		// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+		// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 		DebugHelper::getSingleton().finalise();
 		return -1;
 	}
@@ -415,7 +415,7 @@ int process_newassets(int argc, char* argv[], const std::string assetsType)
 	app.finalise();
 	INFO_MSG(fmt::format("{}({}) has shut down. ServerAssets={}\n", COMPONENT_NAME_EX(g_componentType), g_componentID, (pServerAssets ? pServerAssets->good() : false)));
 
-	// Èç¹û»¹ÓĞÈÕÖ¾Î´Í¬²½Íê³É£¬ ÕâÀï»á¼ÌĞøÍ¬²½Íê³É²Å½áÊø
+	// å¦‚æœè¿˜æœ‰æ—¥å¿—æœªåŒæ­¥å®Œæˆï¼Œ è¿™é‡Œä¼šç»§ç»­åŒæ­¥å®Œæˆæ‰ç»“æŸ
 	DebugHelper::getSingleton().finalise();
 
 	if (pServerAssets)
@@ -442,12 +442,24 @@ int process_help(int argc, char* argv[])
 	printf("--clientsdk:\n");
 	printf("\tAutomatically generate client code based on entity_defs file. Environment variables based on KBE.\n");
 	printf("\tkbcmd.exe --clientsdk=unity --outpath=c:/unity_kbesdk\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --zip=c:/unity_kbesdk.zip\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --tar=c:/unity_kbesdk.tgz\n");
-	printf("\tkbcmd.exe --clientsdk=ue4 --outpath=c:/unity_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --zip=c:/unity_kbesdk.zip\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --tar=c:/unity_kbesdk.tgz\n");
-	printf("\tkbcmd.exe --clientsdk=ue5 --outpath=c:/unity_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --zip=c:/ue4_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --tar=c:/ue4_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=ue4 --outpath=c:/ue4_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --zip=c:/ue5_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --tar=c:/ue5_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=ue5 --outpath=c:/ue5_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=typescript --zip=c:/typescript_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=typescript --tar=c:/typescript_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=typescript --outpath=c:/typescript_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=csharp --zip=c:/csharp_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=csharp --tar=c:/csharp_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=csharp --outpath=c:/csharp_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
+
+	printf("\tkbcmd.exe --clientsdk=cxx --zip=c:/cxx_kbesdk.zip\n");
+	printf("\tkbcmd.exe --clientsdk=cxx --tar=c:/cxx_kbesdk.tgz\n");
+	printf("\tkbcmd.exe --clientsdk=cxx --outpath=c:/cxx_kbesdk --KBE_ROOT=\"*\"  --KBE_RES_PATH=\"*\"  --KBE_BIN_PATH=\"*\"\n");
 
 	printf("\n--getuid\n");
 	printf("\tReturns the ID of the server group.\n");

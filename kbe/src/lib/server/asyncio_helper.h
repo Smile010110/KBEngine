@@ -13,12 +13,12 @@ namespace KBEngine {
 	public:
 
 		/**
-		 * Ìá½»Ò»¸öĞ­³Ìµ½async_dispatcherÄ£¿éÖĞÖ´ĞĞ¡£
-		 * Õâ¸öº¯Êı»á¼ì²é´«ÈëµÄpyObjectÊÇ·ñÊÇÒ»¸ö¿ÉµÈ´ıµÄ¶ÔÏó£¨¼´ÊµÏÖÁË__await__·½·¨£©£¬
-		 * Èç¹ûÊÇ£¬Ôòµ÷ÓÃasync_dispatcherÄ£¿éÖĞµÄsubmit_coroutineº¯ÊıÌá½»¸ÃĞ­³Ì¡£
+		 * æäº¤ä¸€ä¸ªåç¨‹åˆ°async_dispatcheræ¨¡å—ä¸­æ‰§è¡Œã€‚
+		 * è¿™ä¸ªå‡½æ•°ä¼šæ£€æŸ¥ä¼ å…¥çš„pyObjectæ˜¯å¦æ˜¯ä¸€ä¸ªå¯ç­‰å¾…çš„å¯¹è±¡ï¼ˆå³å®ç°äº†__await__æ–¹æ³•ï¼‰ï¼Œ
+		 * å¦‚æœæ˜¯ï¼Œåˆ™è°ƒç”¨async_dispatcheræ¨¡å—ä¸­çš„submit_coroutineå‡½æ•°æäº¤è¯¥åç¨‹ã€‚
 		 *
-		 * @param pyObject: ÒªÌá½»µÄPython¶ÔÏó£¬±ØĞëÊÇÒ»¸ö¿ÉµÈ´ıµÄĞ­³Ì¡£
-		 * @return ·µ»ØNULL£¬ÒòÎªsubmitCoroutineº¯ÊıÊÇÒì²½µÄ£¬ÔİÊ±²»´¦Àí·µ»Ø½á¹û¡£
+		 * @param pyObject: è¦æäº¤çš„Pythonå¯¹è±¡ï¼Œå¿…é¡»æ˜¯ä¸€ä¸ªå¯ç­‰å¾…çš„åç¨‹ã€‚
+		 * @return è¿”å›NULLï¼Œå› ä¸ºsubmitCoroutineå‡½æ•°æ˜¯å¼‚æ­¥çš„ï¼Œæš‚æ—¶ä¸å¤„ç†è¿”å›ç»“æœã€‚
 		 */
 		static PyObject* submitCoroutine(PyObject* pyObject);
 	};

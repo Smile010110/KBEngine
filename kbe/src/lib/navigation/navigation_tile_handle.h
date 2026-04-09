@@ -23,13 +23,13 @@ public:
 
 	enum TILE_STATE
 	{
-		TILE_STATE_OPENED_COST0 = 0,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_OPENED_COST1 = 1,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_OPENED_COST2 = 2,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_OPENED_COST3 = 3,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_OPENED_COST4 = 4,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_OPENED_COST5 = 5,	// ´ò¿ª×´Ì¬, ÔÊĞíÍ¨¹ı
-		TILE_STATE_CLOSED = 9			// ¹Ø±Õ×´Ì¬
+		TILE_STATE_OPENED_COST0 = 0,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_OPENED_COST1 = 1,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_OPENED_COST2 = 2,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_OPENED_COST3 = 3,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_OPENED_COST4 = 4,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_OPENED_COST5 = 5,	// æ‰“å¼€çŠ¶æ€, å…è®¸é€šè¿‡
+		TILE_STATE_CLOSED = 9			// å…³é—­çŠ¶æ€
 	};
 
 	class MapSearchNode
@@ -53,6 +53,26 @@ public:
 	
 	static MapSearchNode nodeGoal, nodeStart;
 	static AStarSearch<NavTileHandle::MapSearchNode> astarsearch;
+
+	dtPolyRef findNearestPoly(
+		int layer,
+		const Position3D& pos,
+		Position3D* nearestPt = nullptr
+	) override;
+
+	bool moveAlongSurface(
+		int layer,
+		dtPolyRef& inoutPoly,
+		const Position3D& start,
+		const Position3D& end,
+		Position3D& outPos
+	) override;
+
+	float getPolyHeight(
+		int layer,
+		dtPolyRef poly,
+		const Position3D& pos
+	) override;
 
 public:
 	NavTileHandle(bool dir);

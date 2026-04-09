@@ -5,8 +5,8 @@
 #include "db_threadpool.h"
 #include "entity_table.h"
 #include "common/kbekey.h"
+#include "db_mongodb/db_interface_mongodb.h"
 #include "db_mysql/db_interface_mysql.h"
-#include "db_redis/db_interface_redis.h"
 #include "server/serverconfig.h"
 #include "thread/threadpool.h"
 
@@ -87,7 +87,7 @@ bool DBUtil::initialize()
 
 		if ((*dbinfo_iter).db_passwordEncrypt)
 		{
-			// 如果小于64则表明当前是明文密码配置
+			// 濡傛灉灏忎簬64鍒欒〃鏄庡綋鍓嶆槸鏄庢枃瀵嗙爜閰嶇疆
 			if (strlen((*dbinfo_iter).db_password) < 64)
 			{
 				WARNING_MSG(fmt::format("DBUtil::initialize: db({}) password is not encrypted!\nplease use password(rsa):\n{}\n",
@@ -147,9 +147,9 @@ DBInterface* DBUtil::createInterface(const std::string& name, bool showinfo)
 	{
 		dbinterface = new DBInterfaceMysql(name.c_str(), pDBInfo->db_unicodeString_characterSet, pDBInfo->db_unicodeString_collation);
 	}
-	else if (strcmp(pDBInfo->db_type, "redis") == 0)
+	else if (strcmp(pDBInfo->db_type, "mongodb") == 0)
 	{
-		dbinterface = new DBInterfaceRedis(name.c_str());
+		dbinterface = new DBInterfaceMongodb(name.c_str());
 	}
 
 	if(dbinterface == NULL)
@@ -219,9 +219,9 @@ bool DBUtil::initInterface(DBInterface* pdbi)
 	{
 		DBInterfaceMysql::initInterface(pdbi);
 	}
-	else if (strcmp(pDBInfo->db_type, "redis") == 0)
+	else if (strcmp(pDBInfo->db_type, "mongodb") == 0)
 	{
-		DBInterfaceRedis::initInterface(pdbi);
+		DBInterfaceMongodb::initInterface(pdbi);
 	}
 	
 	thread::ThreadPool* pThreadPool = pThreadPoolMaps_[pdbi->name()];

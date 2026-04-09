@@ -18,17 +18,38 @@ namespace KBEngine{
 
 uint32 PropertyDescription::propertyDescriptionCount_ = 0;
 
+
 //-------------------------------------------------------------------------------------
-PropertyDescription::PropertyDescription(ENTITY_PROPERTY_UID utype, 
-										std::string dataTypeName, 
-										std::string name, uint32 flags, 
-										bool isPersistent, 
-										DataType* dataType, 
-										bool isIdentifier, 
-										std::string indexType,
-										uint32 databaseLength, 
-										std::string defaultStr, 
-										DETAIL_TYPE detailLevel):
+PropertyDescription::PropertyDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name, uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
+		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel, "")
+{
+	
+}
+
+
+
+//-------------------------------------------------------------------------------------
+PropertyDescription::PropertyDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name, uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	std::string descriptionStr) :
 	name_(name),
 	dataTypeName_(dataTypeName),
 	flags_(flags),
@@ -40,12 +61,13 @@ PropertyDescription::PropertyDescription(ENTITY_PROPERTY_UID utype,
 	defaultValStr_(defaultStr),
 	detailLevel_(detailLevel),
 	aliasID_(-1),
-	indexType_(indexType)
+	indexType_(indexType),
+	descriptionStr_(descriptionStr)
 {
 	dataType_->incRef();
 
-	// entityCall 无法保存
-	if(isPersistent && strcmp(dataType_->getName(), "ENTITYCALL") == 0)
+	// entityCall 鏃犳硶淇濆瓨
+	if (isPersistent && strcmp(dataType_->getName(), "ENTITYCALL") == 0)
 	{
 		isPersistent_ = false;
 	}
@@ -65,12 +87,13 @@ PropertyDescription::PropertyDescription(ENTITY_PROPERTY_UID utype,
 
 	PropertyDescription::propertyDescriptionCount_++;
 
-	if(dataType == NULL)
+	if (dataType == NULL)
 	{
 		ERROR_MSG(fmt::format("PropertyDescription::PropertyDescription: {} DataType is NULL, in property[{}].\n",
 			dataTypeName.c_str(), name_.c_str()));
 	}
 }
+
 
 //-------------------------------------------------------------------------------------
 PropertyDescription::~PropertyDescription()
@@ -111,7 +134,7 @@ PyObject* PropertyDescription::parseDefaultStr(const std::string& defaultVal)
 //-------------------------------------------------------------------------------------
 void PropertyDescription::addPersistentToStream(MemoryStream* mstream, PyObject* pyValue)
 {
-	// 允许使用默认值来创建一个流
+	// 鍏佽浣跨敤榛樿鍊兼潵鍒涘缓涓�涓祦
 	if(pyValue == NULL)
 	{
 		pyValue = newDefaultVal();
@@ -140,7 +163,7 @@ PropertyDescription* PropertyDescription::createDescription(ENTITY_PROPERTY_UID 
 															std::string indexType,
 															uint32 databaseLength, 
 															const std::string& defaultStr,
-															DETAIL_TYPE detailLevel)
+															DETAIL_TYPE detailLevel, std::string descriptionStr)
 {
 	PropertyDescription* propertyDescription = NULL;
 	if(dataTypeName == "FIXED_DICT" || 
@@ -148,14 +171,14 @@ PropertyDescription* PropertyDescription::createDescription(ENTITY_PROPERTY_UID 
 	{
 		propertyDescription = new FixedDictDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel);
+														defaultStr, detailLevel, descriptionStr);
 	}
 	else if(dataTypeName == "ARRAY" ||
 		strcmp(dataType->getName(), "ARRAY") == 0)
 	{
 		propertyDescription = new ArrayDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel);
+														defaultStr, detailLevel, descriptionStr);
 		
 	}
 	else if(dataTypeName == "VECTOR2" || 
@@ -163,34 +186,34 @@ PropertyDescription* PropertyDescription::createDescription(ENTITY_PROPERTY_UID 
 	{
 		propertyDescription = new VectorDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel, 2);
+														defaultStr, detailLevel, 2, descriptionStr);
 	}
 	else if(dataTypeName == "VECTOR3" || 
 		strcmp(dataType->getName(), "VECTOR3") == 0)
 	{
 		propertyDescription = new VectorDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel, 3);
+														defaultStr, detailLevel, 3, descriptionStr);
 	}
 	else if(dataTypeName == "VECTOR4" || 
 		strcmp(dataType->getName(), "VECTOR4") == 0)
 	{
 		propertyDescription = new VectorDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel, 4);
+														defaultStr, detailLevel, 4, descriptionStr);
 	}
 	else if (dataTypeName == "EntityComponent" ||
 		strcmp(dataType->getName(), "EntityComponent") == 0)
 	{
 		propertyDescription = new EntityComponentDescription(utype, dataTypeName, name, flags, isPersistent,
 			dataType, isIdentifier, indexType, databaseLength,
-			defaultStr, detailLevel);
+			defaultStr, detailLevel, descriptionStr);
 	}
 	else
 	{
 		propertyDescription = new PropertyDescription(utype, dataTypeName, name, flags, isPersistent, 
 														dataType, isIdentifier, indexType, databaseLength, 
-														defaultStr, detailLevel);
+														defaultStr, detailLevel, descriptionStr);
 	}
 
 	return propertyDescription;
@@ -216,24 +239,24 @@ PyObject* PropertyDescription::onSetValue(PyObject* parentObj, PyObject* value)
 }
 
 //-------------------------------------------------------------------------------------
-FixedDictDescription::FixedDictDescription(ENTITY_PROPERTY_UID utype, 
-											std::string dataTypeName,
-											std::string name, 
-											uint32 flags, 
-											bool isPersistent, 
-											DataType* dataType, 
-											bool isIdentifier, 
-											std::string indexType,
-											uint32 databaseLength, 
-											std::string defaultStr, 
-											DETAIL_TYPE detailLevel):
-	PropertyDescription(utype, dataTypeName, name, flags, isPersistent, 
+FixedDictDescription::FixedDictDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
 		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel)
 {
 	KBE_ASSERT(dataType->type() == DATA_TYPE_FIXEDDICT);
 
 	/*
-	FixedDictType::FIXEDDICT_KEYTYPE_MAP& keyTypes = 
+	FixedDictType::FIXEDDICT_KEYTYPE_MAP& keyTypes =
 		static_cast<FixedDictType*>(dataType)->getKeyTypes();
 
 	FixedDictType::FIXEDDICT_KEYTYPE_MAP::iterator iter = keyTypes.begin();
@@ -243,6 +266,25 @@ FixedDictDescription::FixedDictDescription(ENTITY_PROPERTY_UID utype,
 			std::string(iter->second->getName()), iter->first, flags, isPersistent, iter->second, false, 0, std::string(), detailLevel);
 	}
 	*/
+}
+
+//-------------------------------------------------------------------------------------
+FixedDictDescription::FixedDictDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	std::string descriptionStr) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
+		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel, descriptionStr)
+{
+	KBE_ASSERT(dataType->type() == DATA_TYPE_FIXEDDICT);
 }
 
 //-------------------------------------------------------------------------------------
@@ -270,7 +312,7 @@ PyObject* FixedDictDescription::onSetValue(PyObject* parentObj, PyObject* value)
 //-------------------------------------------------------------------------------------
 void FixedDictDescription::addPersistentToStream(MemoryStream* mstream, PyObject* pyValue)
 {
-	// 允许使用默认值来创建一个流
+	// 鍏佽浣跨敤榛樿鍊兼潵鍒涘缓涓�涓祦
 	if(pyValue == NULL)
 	{
 		pyValue = newDefaultVal();
@@ -289,19 +331,37 @@ PyObject* FixedDictDescription::createFromPersistentStream(MemoryStream* mstream
 }
 
 //-------------------------------------------------------------------------------------
-ArrayDescription::ArrayDescription(ENTITY_PROPERTY_UID utype, 
-									std::string dataTypeName,
-									std::string name, 
-									uint32 flags, 
-									bool isPersistent, 
-									DataType* dataType, 
-									bool isIdentifier, 
-									std::string indexType,
-									uint32 databaseLength, 
-									std::string defaultStr, 
-									DETAIL_TYPE detailLevel):
-	PropertyDescription(utype, dataTypeName, name, flags, isPersistent, 
+ArrayDescription::ArrayDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
 		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel)
+{
+}
+
+//-------------------------------------------------------------------------------------
+ArrayDescription::ArrayDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	std::string descriptionStr) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
+		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel, descriptionStr)
 {
 }
 
@@ -329,7 +389,7 @@ PyObject* ArrayDescription::onSetValue(PyObject* parentObj, PyObject* value)
 //-------------------------------------------------------------------------------------
 void ArrayDescription::addPersistentToStream(MemoryStream* mstream, PyObject* pyValue)
 {
-	// 允许使用默认值来创建一个流
+	// 鍏佽浣跨敤榛樿鍊兼潵鍒涘缓涓�涓祦
 	if(pyValue == NULL)
 	{
 		pyValue = newDefaultVal();
@@ -348,20 +408,41 @@ PyObject* ArrayDescription::createFromPersistentStream(MemoryStream* mstream)
 }
 
 //-------------------------------------------------------------------------------------
-VectorDescription::VectorDescription(ENTITY_PROPERTY_UID utype, 
-									std::string dataTypeName, 
-									std::string name, 
-									uint32 flags, 
-									bool isPersistent, 
-									DataType* dataType, 
-									bool isIdentifier, 
-									std::string indexType,
-									uint32 databaseLength, 
-									std::string defaultStr, 
-									DETAIL_TYPE detailLevel, 
-									uint8 elemCount):
-	PropertyDescription(utype, dataTypeName, name, flags, isPersistent, 
+VectorDescription::VectorDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	uint8 elemCount) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
 		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel),
+	elemCount_(elemCount)
+{
+}
+
+
+//-------------------------------------------------------------------------------------
+VectorDescription::VectorDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	uint8 elemCount,
+	std::string descriptionStr) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
+		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel, descriptionStr),
 	elemCount_(elemCount)
 {
 }
@@ -455,6 +536,25 @@ EntityComponentDescription::EntityComponentDescription(ENTITY_PROPERTY_UID utype
 {
 }
 
+
+//-------------------------------------------------------------------------------------
+EntityComponentDescription::EntityComponentDescription(ENTITY_PROPERTY_UID utype,
+	std::string dataTypeName,
+	std::string name,
+	uint32 flags,
+	bool isPersistent,
+	DataType* dataType,
+	bool isIdentifier,
+	std::string indexType,
+	uint32 databaseLength,
+	std::string defaultStr,
+	DETAIL_TYPE detailLevel,
+	std::string descriptionStr) :
+	PropertyDescription(utype, dataTypeName, name, flags, isPersistent,
+		dataType, isIdentifier, indexType, databaseLength, defaultStr, detailLevel, descriptionStr)
+{
+}
+
 //-------------------------------------------------------------------------------------
 EntityComponentDescription::~EntityComponentDescription()
 {
@@ -483,7 +583,7 @@ bool EntityComponentDescription::isSamePersistentType(PyObject* pyValue)
 //-------------------------------------------------------------------------------------
 void EntityComponentDescription::addPersistentToStream(MemoryStream* mstream, PyObject* pyValue)
 {
-	// 允许使用默认值来创建一个流
+	// 鍏佽浣跨敤榛樿鍊兼潵鍒涘缓涓�涓祦
 	if (pyValue == NULL)
 	{
 		pyValue = newDefaultVal();

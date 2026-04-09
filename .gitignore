@@ -5,6 +5,7 @@ kbe_temp_*
 .vscode
 .vs
 .idea
+build.log
 # .vscode/settings.json
 # ----[ Visual Studio ]------- #
 /kbe/src/_objs
@@ -26,6 +27,12 @@ logs/
 *.exe
 *.pdb
 *.chw
+/kbe/src/vcpkg_installed
+
+/kbe/src/lib/pythonBuild/pythonBuild
+/kbe/src/lib/pythonBuild/x64
+/kbe/src/server/init/x64
+/kbe/src/server/init/KBEMain
 
 # -------------[ OS generated ]------------------------ #
 .DS_Store
@@ -36,6 +43,7 @@ Thumbs.db
 *.pyc
 
 # -------------[ make files ]------------------------ #
+/kbe/src/build
 /kbe/res/scripts/common/lib-dynload/
 /kbe/res/scripts/common/Lib
 /kbe/res/scripts/common/DLLs
@@ -76,6 +84,7 @@ kbe/bin/server/loginapp.lib
 kbe/bin/server/machine.lib
 kbe/bin/server/python37_d.dll
 kbe/bin/server/python313_d.dll
+kbe/bin/server/python313.dll
 kbe/bin/server/vcruntime140.dll
 kbe/bin/server/vcruntime140_1.dll
 kbe/src/.vs
@@ -88,6 +97,7 @@ kbe/src/libs/common_d.lib
 kbe/src/libs/db_interface_d.lib
 kbe/src/libs/db_mysql_d.lib
 kbe/src/libs/db_redis_d.lib
+kbe/src/libs/db_mongodb_d.lib
 kbe/src/libs/entitydef_d.lib
 kbe/src/libs/expat_d.lib
 kbe/src/libs/fmt_d.lib
@@ -157,6 +167,7 @@ kbe/src/libs/common.lib
 kbe/src/libs/db_interface.lib
 kbe/src/libs/db_mysql.lib
 kbe/src/libs/db_redis.lib
+kbe/src/libs/db_mongodb.lib
 kbe/src/libs/entitydef.lib
 kbe/src/libs/expat.lib
 kbe/src/libs/fmt.lib
@@ -191,3 +202,13 @@ kbengine_demos_assets-def
 balls_server_assets
 kbengine_demos_assets
 *server_assets*
+*demo*_assets*
+
+
+# webconsole
+/kbe/tools/server/webconsole/pycommon
+/kbe/tools/server/webconsole/db.sqlite3
+/kbe/tools/server/webconsole/*.pyc
+#/kbe/tools/server/webconsole/webconsole/migrations/
+#/kbe/tools/server/webconsole/cluster/migrations/
+#/kbe/tools/server/webconsole/component/migrations/

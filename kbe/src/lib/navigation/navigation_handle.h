@@ -3,6 +3,8 @@
 #ifndef KBE_NAVIGATEHANDLE_H
 #define KBE_NAVIGATEHANDLE_H
 
+#include <recastnavigation/DetourNavMesh.h>
+
 #include "common/common.h"
 #include "helper/debug_helper.h"
 #include "common/smartpointer.h"
@@ -26,8 +28,8 @@ public:
 
 	enum NAV_OBJECT_STATE
 	{
-		NAV_OBJECT_STATE_MOVING = 1,	// “∆∂Ø÷–
-		NAV_OBJECT_STATE_MOVEOVER = 2,	// “∆∂Ø“—æ≠Ω· ¯¡À
+		NAV_OBJECT_STATE_MOVING = 1,	// ÁßªÂä®‰∏≠
+		NAV_OBJECT_STATE_MOVEOVER = 2,	// ÁßªÂä®Â∑≤ÁªèÁªìÊùü‰∫Ü
 	};
 
 	NavigationHandle():
@@ -47,6 +49,26 @@ public:
 		std::vector<Position3D>& points, uint32 max_points, float maxRadius) = 0;
 
 	virtual int raycast(int layer, const Position3D& start, const Position3D& end, std::vector<Position3D>& hitPointVec) = 0;
+
+	virtual dtPolyRef findNearestPoly(
+		int layer,
+		const Position3D& pos,
+		Position3D* nearestPt = nullptr
+	) = 0;
+
+	virtual bool moveAlongSurface(
+		int layer,
+		dtPolyRef& inoutPoly,
+		const Position3D& start,
+		const Position3D& end,
+		Position3D& outPos
+	) = 0;
+
+	virtual float getPolyHeight(
+		int layer,
+		dtPolyRef poly,
+		const Position3D& pos
+	) = 0;
 
 	std::string resPath;
 };

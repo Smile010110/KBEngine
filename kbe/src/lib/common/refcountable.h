@@ -2,14 +2,14 @@
 
 
 /*
-	ÒıÓÃ¼ÆÊıÊµÏÖÀà
+	å¼•ç”¨è®¡æ•°å®ç°ç±»
 
-	Ê¹ÓÃ·½·¨:
+	ä½¿ç”¨æ–¹æ³•:
 		class AA:public RefCountable
 		{
 		public:
 			AA(){}
-			~AA(){ printf("Îö¹¹"); }
+			~AA(){ printf("ææ„"); }
 		};
 		
 		--------------------------------------------
@@ -22,8 +22,8 @@
 		delete s;
 		delete s1;
 		
-		Ö´ĞĞ½á¹û:
-			Îö¹¹
+		æ‰§è¡Œç»“æœ:
+			ææ„
 */
 #ifndef KBE_REFCOUNTABLE_H
 #define KBE_REFCOUNTABLE_H
@@ -46,7 +46,7 @@ public:
 		int currRef = --refCount_;
 		assert(currRef >= 0 && "RefCountable:currRef maybe a error!");
 		if (0 >= currRef)
-			onRefOver();											// ÒıÓÃ½áÊøÁË
+			onRefOver();											// å¼•ç”¨ç»“æŸäº†
 	}
 
 	virtual void onRefOver(void) const
@@ -93,7 +93,7 @@ public:
 		long currRef =::InterlockedDecrement(&refCount_);
 		assert(currRef >= 0 && "RefCountable:currRef maybe a error!");
 		if (0 >= currRef)
-			onRefOver();											// ÒıÓÃ½áÊøÁË
+			onRefOver();											// å¼•ç”¨ç»“æŸäº†
 	}
 
 	virtual void onRefOver(void) const
@@ -130,12 +130,28 @@ class SafeRefCountable
 public:
 	inline void incRef(void) const
 	{
+	#if defined(__x86_64__) || defined(__i386__)
 		__asm__ volatile (
 			"lock addl $1, %0"
-			:						// no output
-			: "m"	(this->refCount_) 	// input: this->count_
-			: "memory" 				// clobbers memory
+			:
+			: "m"(this->refCount_)
+			: "memory"
 		);
+	#elif defined(__aarch64__)
+		uint32_t tmp;
+		uint32_t status;
+		asm volatile(
+			"1: ldaxr %w0, [%2]\n"   // ä»å†…å­˜åŠ è½½åˆ° tmp
+			"   add %w0, %w0, #1\n"   // tmp = tmp + 1
+			"   stlxr %w1, %w0, [%2]\n" // å°è¯•å­˜å‚¨ï¼Œstatus è¡¨ç¤ºæˆåŠŸä¸å¦
+			"   cbnz %w1, 1b\n"        // å¦‚æœå¤±è´¥ï¼Œé‡è¯•
+			: "=&r"(tmp), "=&r"(status)
+			: "r"(&this->refCount_)
+			: "memory"
+		);
+	#else
+		refCount_++;  // fallback, éçº¿ç¨‹å®‰å…¨
+	#endif
 	}
 
 	inline void decRef(void) const
@@ -144,7 +160,7 @@ public:
 		long currRef = intDecRef();
 		assert(currRef >= 0 && "RefCountable:currRef maybe a error!");
 		if (0 >= currRef)
-			onRefOver();											// ÒıÓÃ½áÊøÁË
+			onRefOver();											// å¼•ç”¨ç»“æŸäº†
 	}
 
 	virtual void onRefOver(void) const
@@ -181,15 +197,36 @@ private:
 	 */
 	inline int intDecRef() const
 	{
+	#if defined(__x86_64__) || defined(__i386__)
 		int ret;
 		__asm__ volatile (
-			"mov $-1, %0  \n\t"
+			"mov $-1, %0      \n\t"
 			"lock xadd %0, %1"
-			: "=&a"	(ret)				// output only and early clobber
-			: "m"	(this->refCount_)		// input (memory)
+			: "=&a"(ret)                  // output only and early clobber
+			: "m"(this->refCount_)        // input (memory)
 			: "memory"
 		);
 		return ret;
+
+	#elif defined(__aarch64__)
+		int old, tmp, res;
+		asm volatile(
+			"1: ldaxr %w0, [%3]\n"   // old = *refCount_
+			"   sub %w1, %w0, #1\n"  // tmp = old - 1
+			"   stlxr %w2, %w1, [%3]\n" // res = store success?
+			"   cbnz %w2, 1b\n"      // retry if failed
+			: "=&r"(old), "=&r"(tmp), "=&r"(res)
+			: "r"(&this->refCount_)
+			: "memory"
+		);
+		return old;
+
+	#else
+		// fallbackï¼Œéçº¿ç¨‹å®‰å…¨
+		int old = this->refCount_;
+		this->refCount_--;
+		return old;
+	#endif
 	}
 };
 #endif

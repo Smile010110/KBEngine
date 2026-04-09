@@ -230,7 +230,7 @@ public:
 		return false;
 	}
 
-	virtual bool saveFile();
+	virtual bool saveFile(bool overwrite = true);
 
 	virtual bool writeEntityModule(ScriptDefModule* pEntityScriptDefModule);
 	virtual bool writeEntityModuleBegin(ScriptDefModule* pEntityScriptDefModule);

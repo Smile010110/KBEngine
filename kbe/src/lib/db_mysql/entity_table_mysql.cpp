@@ -18,7 +18,7 @@
 
 namespace KBEngine { 
 
-// Õ¨≤Ω≥…π¶ ±ªÿµ˜
+// ÂêåÊ≠•ÊàêÂäüÊó∂ÂõûË∞É
 typedef void (*onSyncItemToDBSuccessPtr)(DBInterface*, const char*, const char*);
 
 bool sync_item_to_db(DBInterface* pdbi, 
@@ -32,14 +32,18 @@ bool sync_item_to_db(DBInterface* pdbi,
 {
 	if(pData)
 	{
+
 		DBInterfaceMysql::TABLE_FIELDS* pTFData = static_cast<DBInterfaceMysql::TABLE_FIELDS*>(pData);
 		DBInterfaceMysql::TABLE_FIELDS::iterator iter = pTFData->find(itemName);
+
 		if(iter != pTFData->end())
 		{
 			MYSQL_TABLE_FIELD& tf = iter->second;
 			if (tf.type == sqlitemtype && ((tf.flags & ALL_MYSQL_SET_FLAGS) == itemflags))
 			{
-				if ((length == 0) || (sqlitemtype == FIELD_TYPE_VAR_STRING ? (int32)length == tf.length / SYSTEM_CHARSET_MBMAXLEN/*MysqlΩ´length∑≈¥Û¡ÀN±∂*/ : 
+				// utf8mb4 ÊØèÂ≠óÁ¨¶ÊúÄÂ§ßÂ≠óËäÇÊï∞ÊòØ4Ôºå‰∏ãÈù¢ËÆ°ÁÆóÊñπÂºè‰∏çÈÄÇÁî®Ôºå‰ºöÂØºËá¥ÊØèÊ¨°ÂêØÂä®ÔºåÈÉΩÈáçÂ§çÂêåÊ≠•‰∏ÄÊ¨°UNICODEÂ≠óÊÆµ
+				//if ((length == 0) || (sqlitemtype == FIELD_TYPE_VAR_STRING ? (int32)length == tf.length / SYSTEM_CHARSET_MBMAXLEN /*MysqlÂ∞ÜlengthÊîæÂ§ß‰∫ÜNÂÄç*/ : 
+				if ((length == 0) || (sqlitemtype == FIELD_TYPE_VAR_STRING ? (int32)length == tf.char_length: 
 					(int32)length == tf.length))
 					return true;
 			}
@@ -101,7 +105,7 @@ bool sync_item_to_db(DBInterface* pdbi,
 
 void sync_autoload_item_index(DBInterface* pdbi, const char* tableName, const char* itemName)
 {
-	// ¥¥Ω®sm_autoLoadµƒÀ˜“˝
+	// ÂàõÂª∫sm_autoLoadÁöÑÁ¥¢Âºï
 	std::string sql = fmt::format("ALTER TABLE " ENTITY_TABLE_PERFIX "_{} ADD INDEX ({})", tableName, itemName);
 
 	try
@@ -127,10 +131,10 @@ EntityTableMysql::~EntityTableMysql()
 //-------------------------------------------------------------------------------------
 bool EntityTableMysql::initialize(ScriptDefModule* sm, std::string name)
 {
-	// ªÒ»°±Ì√˚
+	// Ëé∑ÂèñË°®Âêç
 	tableName(name);
 
-	// ’“µΩÀ˘”–¥Ê¥¢ Ù–‘≤¢«“¥¥Ω®≥ˆÀ˘”–µƒ◊÷∂Œ
+	// ÊâæÂà∞ÊâÄÊúâÂ≠òÂÇ®Â±ûÊÄßÂπ∂‰∏îÂàõÂª∫Âá∫ÊâÄÊúâÁöÑÂ≠óÊÆµ
 	ScriptDefModule::PROPERTYDESCRIPTION_MAP& pdescrsMap = sm->getPersistentPropertyDescriptions();
 	ScriptDefModule::PROPERTYDESCRIPTION_MAP::const_iterator iter = pdescrsMap.begin();
 
@@ -138,7 +142,7 @@ bool EntityTableMysql::initialize(ScriptDefModule* sm, std::string name)
 	{
 		PropertyDescription* pdescrs = iter->second;
 
-		// »Áπ˚ƒ≥∏ˆ µÃÂ√ª”–cell≤ø∑÷£¨ ∂¯◊Èº˛ Ù–‘√ª”–base≤ø∑÷‘Ú∫ˆ¬‘
+		// Â¶ÇÊûúÊüê‰∏™ÂÆû‰ΩìÊ≤°ÊúâcellÈÉ®ÂàÜÔºå ËÄåÁªÑ‰ª∂Â±ûÊÄßÊ≤°ÊúâbaseÈÉ®ÂàÜÂàôÂøΩÁï•
 		if (!sm->hasCell())
 		{
 			if (pdescrs->getDataType()->type() == DATA_TYPE_ENTITY_COMPONENT && !pdescrs->hasBase())
@@ -162,7 +166,7 @@ bool EntityTableMysql::initialize(ScriptDefModule* sm, std::string name)
 		addItem(pETItem);
 	}
 
-	// Ãÿ ‚¥¶¿Ì£¨  ˝æ›ø‚±£¥Ê∑ΩœÚ∫ÕŒª÷√
+	// ÁâπÊÆäÂ§ÑÁêÜÔºå Êï∞ÊçÆÂ∫ì‰øùÂ≠òÊñπÂêëÂíå‰ΩçÁΩÆ
 	if(sm->hasCell())
 	{
 		ENTITY_PROPERTY_UID posuid = ENTITY_BASE_PROPERTY_UTYPE_POSITION_XYZ;
@@ -209,7 +213,7 @@ void EntityTableMysql::init_db_item_name()
 	EntityTable::TABLEITEM_MAP::iterator iter = tableItems_.begin();
 	for(; iter != tableItems_.end(); ++iter)
 	{
-		// ¥¶¿ÌfixedDict◊÷∂Œ√˚≥∆µƒÃÿ¿˝«Èøˆ
+		// Â§ÑÁêÜfixedDictÂ≠óÊÆµÂêçÁß∞ÁöÑÁâπ‰æãÊÉÖÂÜµ
 		std::string exstrFlag = "";
 		if(iter->second->type() == TABLE_ITEM_TYPE_FIXEDDICT)
 		{
@@ -293,7 +297,7 @@ bool EntityTableMysql::syncIndexToDB(DBInterface* pdbi)
 		{
 			bool deleteIndex = fiter->second != (*iiter)->indexType();
 			
-			// …æ≥˝“—æ≠¥¶¿Ìµƒ£¨ £œ¬µƒæÕ «“™¥” ˝æ›ø‚…æ≥˝µƒindex
+			// Âà†Èô§Â∑≤ÁªèÂ§ÑÁêÜÁöÑÔºåÂâ©‰∏ãÁöÑÂ∞±ÊòØË¶Å‰ªéÊï∞ÊçÆÂ∫ìÂà†Èô§ÁöÑindex
 			currDBKeys.erase(fiter);
 			
 			if(deleteIndex)
@@ -330,7 +334,7 @@ bool EntityTableMysql::syncIndexToDB(DBInterface* pdbi)
 		done = true;
 	}
 
-	//  £œ¬µƒæÕ «“™¥” ˝æ›ø‚…æ≥˝µƒindex
+	// Ââ©‰∏ãÁöÑÂ∞±ÊòØË¶Å‰ªéÊï∞ÊçÆÂ∫ìÂà†Èô§ÁöÑindex
 	KBEUnordered_map<std::string, std::string>::iterator dbkey_iter = currDBKeys.begin();
 	for(; dbkey_iter != currDBKeys.end(); ++dbkey_iter)
 	{
@@ -338,7 +342,7 @@ bool EntityTableMysql::syncIndexToDB(DBInterface* pdbi)
 		done = true;		
 	}
 	
-	// √ª”––Ë“™–ﬁ∏ƒªÚ’ﬂÃÌº”µƒ
+	// Ê≤°ÊúâÈúÄË¶Å‰øÆÊîπÊàñËÄÖÊ∑ªÂä†ÁöÑ
 	if(!done)
 		return true;
 	
@@ -424,7 +428,7 @@ bool EntityTableMysql::syncToDB(DBInterface* pdbi)
 
 	pdbi->getTableItemNames(ttablename.c_str(), dbTableItemNames);
 
-	// ºÏ≤È «∑Ò”––Ë“™…æ≥˝µƒ±Ì◊÷∂Œ
+	// Ê£ÄÊü•ÊòØÂê¶ÊúâÈúÄË¶ÅÂà†Èô§ÁöÑË°®Â≠óÊÆµ
 	std::vector<std::string>::iterator iter0 = dbTableItemNames.begin();
 	for(; iter0 != dbTableItemNames.end(); ++iter0)
 	{
@@ -456,7 +460,7 @@ bool EntityTableMysql::syncToDB(DBInterface* pdbi)
 		}
 	}
 
-	// Õ¨≤Ω±ÌÀ˜“˝
+	// ÂêåÊ≠•Ë°®Á¥¢Âºï
 	if(!syncIndexToDB(pdbi))
 		return false;
 
@@ -512,7 +516,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 		
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("tinyint(@DATALEN@) not null DEFAULT {}", defaultVal),
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("tinyint(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal),
 			4, NOT_NULL_FLAG, FIELD_TYPE_TINY);
 	}
 	else if(type == "INT16")
@@ -530,7 +534,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("smallint(@DATALEN@) not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("smallint(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			6, NOT_NULL_FLAG, FIELD_TYPE_SHORT);
 	}
 	else if(type == "INT32")
@@ -548,7 +552,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("int(@DATALEN@) not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("int(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			11, NOT_NULL_FLAG, FIELD_TYPE_LONG);
 	}
 	else if(type == "INT64")
@@ -566,7 +570,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("bigint(@DATALEN@) not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("bigint(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			20, NOT_NULL_FLAG, FIELD_TYPE_LONGLONG);
 	}
 	else if(type == "UINT8")
@@ -584,7 +588,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("tinyint(@DATALEN@) unsigned not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("tinyint(@DATALEN@) unsigned not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			3, NOT_NULL_FLAG | UNSIGNED_FLAG, FIELD_TYPE_TINY);
 	}
 	else if(type == "UINT16")
@@ -602,7 +606,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("smallint(@DATALEN@) unsigned not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("smallint(@DATALEN@) unsigned not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			5, NOT_NULL_FLAG | UNSIGNED_FLAG, FIELD_TYPE_SHORT);
 	}
 	else if(type == "UINT32")
@@ -620,7 +624,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("int(@DATALEN@) unsigned not null DEFAULT {}", defaultVal),
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("int(@DATALEN@) unsigned not null DEFAULT {} @COMMENT@ ", defaultVal),
 			10, NOT_NULL_FLAG | UNSIGNED_FLAG, FIELD_TYPE_LONG);
 	}
 	else if(type == "UINT64")
@@ -638,7 +642,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("bigint(@DATALEN@) unsigned not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("bigint(@DATALEN@) unsigned not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			20, NOT_NULL_FLAG | UNSIGNED_FLAG, FIELD_TYPE_LONGLONG);
 	}
 	else if(type == "FLOAT")
@@ -656,7 +660,7 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("float(@DATALEN@) not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("float(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
 	}
 	else if(type == "DOUBLE")
@@ -674,38 +678,38 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 		if(defaultVal.size() == 0)
 			defaultVal = "0";
 
-		return new EntityTableItemMysql_DIGIT(type, fmt::format("double(@DATALEN@) not null DEFAULT {}", defaultVal), 
+		return new EntityTableItemMysql_DIGIT(type, fmt::format("double(@DATALEN@) not null DEFAULT {} @COMMENT@ ", defaultVal), 
 			0, NOT_NULL_FLAG, FIELD_TYPE_DOUBLE);
 	}
 	else if(type == "STRING")
 	{
-		return new EntityTableItemMysql_STRING(fmt::format("varchar(@DATALEN@) not null DEFAULT '{}'", defaultVal), 
+		return new EntityTableItemMysql_STRING(fmt::format("varchar(@DATALEN@) not null DEFAULT '{}' @COMMENT@ ", defaultVal), 
 			0, NOT_NULL_FLAG | BINARY_FLAG, FIELD_TYPE_VAR_STRING);
 	}
 	else if(type == "UNICODE")
 	{
-		return new EntityTableItemMysql_UNICODE(fmt::format("varchar(@DATALEN@) not null DEFAULT '{}'", defaultVal), 
+		return new EntityTableItemMysql_UNICODE(fmt::format("varchar(@DATALEN@) not null DEFAULT '{}' @COMMENT@ ", defaultVal), 
 			0, NOT_NULL_FLAG | BINARY_FLAG, FIELD_TYPE_VAR_STRING);
 	}
 	else if(type == "PYTHON")
 	{
-		return new EntityTableItemMysql_PYTHON("blob", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
+		return new EntityTableItemMysql_PYTHON("blob  @COMMENT@ ", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
 	}
 	else if(type == "PY_DICT")
 	{
-		return new EntityTableItemMysql_PYTHON("blob", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
+		return new EntityTableItemMysql_PYTHON("blob  @COMMENT@ ", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
 	}
 	else if(type == "PY_TUPLE")
 	{
-		return new EntityTableItemMysql_PYTHON("blob", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
+		return new EntityTableItemMysql_PYTHON("blob @COMMENT@ ", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
 	}
 	else if(type == "PY_LIST")
 	{
-		return new EntityTableItemMysql_PYTHON("blob", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
+		return new EntityTableItemMysql_PYTHON("blob @COMMENT@ ", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
 	}
 	else if(type == "BLOB")
 	{
-		return new EntityTableItemMysql_BLOB("blob", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
+		return new EntityTableItemMysql_BLOB("blob @COMMENT@ ", 0, BINARY_FLAG | BLOB_FLAG, FIELD_TYPE_BLOB);
 	}
 	else if(type == "ARRAY")
 	{
@@ -731,15 +735,15 @@ EntityTableItem* EntityTableMysql::createItem(std::string type, std::string defa
 #else
 	else if(type == "VECTOR2")
 	{
-		return new EntityTableItemMysql_VECTOR2("float not null DEFAULT 0", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
+		return new EntityTableItemMysql_VECTOR2("float not null DEFAULT 0 @COMMENT@ ", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
 	}
 	else if(type == "VECTOR3")
 	{
-		return new EntityTableItemMysql_VECTOR3("float not null DEFAULT 0", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
+		return new EntityTableItemMysql_VECTOR3("float not null DEFAULT 0 @COMMENT@ ", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
 	}
 	else if(type == "VECTOR4")
 	{
-		return new EntityTableItemMysql_VECTOR4("float not null DEFAULT 0", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
+		return new EntityTableItemMysql_VECTOR4("float not null DEFAULT 0 @COMMENT@ ", 0, NOT_NULL_FLAG, FIELD_TYPE_FLOAT);
 	}
 #endif
 	else if(type == "ENTITYCALL")
@@ -799,11 +803,11 @@ DBID EntityTableMysql::writeTable(DBInterface* pdbi, DBID dbid, int8 shouldAutoL
 
 	dbid = context.dbid;
 
-	// »Áπ˚dbidŒ™0‘Ú¥Ê¥¢ ß∞‹∑µªÿ
+	// Â¶ÇÊûúdbid‰∏∫0ÂàôÂ≠òÂÇ®Â§±Ë¥•ËøîÂõû
 	if(dbid <= 0)
 		return dbid;
 
-	// …Ë÷√ µÃÂ «∑Ò◊‘∂Øº”‘ÿ
+	// ËÆæÁΩÆÂÆû‰ΩìÊòØÂê¶Ëá™Âä®Âä†ËΩΩ
 	if(shouldAutoLoad > -1)
 		entityShouldAutoLoad(pdbi, dbid, shouldAutoLoad > 0);
 
@@ -948,6 +952,9 @@ bool EntityTableItemMysql_VECTOR2::isSameKey(std::string key)
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_VECTOR2::syncToDB(DBInterface* pdbi, void* pData)
 {
+
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
+
 	if(!sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), db_item_names_[0], 0, 
 		this->mysqlItemtype_, this->flags(), pData))
 		return false;
@@ -1029,6 +1036,8 @@ bool EntityTableItemMysql_VECTOR3::isSameKey(std::string key)
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_VECTOR3::syncToDB(DBInterface* pdbi, void* pData)
 {
+
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 	if(!sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), db_item_names_[0], 0, 
 		this->mysqlItemtype_, this->flags(), pData))
 		return false;
@@ -1112,6 +1121,9 @@ bool EntityTableItemMysql_VECTOR4::isSameKey(std::string key)
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_VECTOR4::syncToDB(DBInterface* pdbi, void* pData)
 {
+
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
+
 	if(!sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), db_item_names_[0], 0, this->mysqlItemtype_, this->flags(), pData))
 		return false;
 
@@ -1215,7 +1227,7 @@ bool EntityTableItemMysql_ARRAY::initialize(const PropertyDescription* pProperty
 	if(!ret)
 		return false;
 
-	// ¥¥Ω®◊”±Ì
+	// ÂàõÂª∫Â≠êË°®
 	EntityTableMysql* pTable = new EntityTableMysql(this->pParentTable()->pEntityTables());
 
 	std::string tname = this->pParentTable()->tableName();
@@ -1284,7 +1296,7 @@ bool EntityTableItemMysql_ARRAY::initialize(const PropertyDescription* pProperty
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_ARRAY::syncToDB(DBInterface* pdbi, void* pData)
 {
-	// À˘”–µƒ±Ì∂ºª·‘⁄bool EntityTables::syncToDB(DBInterface* pdbi)÷–±ªÕ¨≤Ω£®∞¸¿®◊”±Ì£©£¨“Ú¥ÀŒﬁ–Ë‘Ÿ◊ˆ“ª¥ŒÕ¨≤Ω
+	// ÊâÄÊúâÁöÑË°®ÈÉΩ‰ºöÂú®bool EntityTables::syncToDB(DBInterface* pdbi)‰∏≠Ë¢´ÂêåÊ≠•ÔºàÂåÖÊã¨Â≠êË°®ÔºâÔºåÂõ†Ê≠§Êó†ÈúÄÂÜçÂÅö‰∏ÄÊ¨°ÂêåÊ≠•
 	//if(pChildTable_)
 	//	return pChildTable_->syncToDB(pdbi);
 
@@ -1555,7 +1567,7 @@ bool EntityTableItemMysql_Component::initialize(const PropertyDescription* pProp
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_Component::syncToDB(DBInterface* pdbi, void* pData)
 {
-	// À˘”–µƒ±Ì∂ºª·‘⁄bool EntityTables::syncToDB(DBInterface* pdbi)÷–±ªÕ¨≤Ω£®∞¸¿®◊”±Ì£©£¨“Ú¥ÀŒﬁ–Ë‘Ÿ◊ˆ“ª¥ŒÕ¨≤Ω
+	// ÊâÄÊúâÁöÑË°®ÈÉΩ‰ºöÂú®bool EntityTables::syncToDB(DBInterface* pdbi)‰∏≠Ë¢´ÂêåÊ≠•ÔºàÂåÖÊã¨Â≠êË°®ÔºâÔºåÂõ†Ê≠§Êó†ÈúÄÂÜçÂÅö‰∏ÄÊ¨°ÂêåÊ≠•
 	//if(pChildTable_)
 	//	return pChildTable_->syncToDB(pdbi);
 	return true;
@@ -1573,14 +1585,14 @@ void EntityTableItemMysql_Component::addToStream(MemoryStream* s, mysql::DBConte
 			{
 				std::vector<DBID>& dbids = iter->second->dbids[resultDBID];
 
-				// »Áπ˚“ª∏ˆ µÃÂ“—æ≠¥Êµµ£¨ø™∑¢÷–”÷∂‘ µÃÂº”»Î¡À◊Èº˛£¨ƒ«√¥ ˝æ›ø‚÷–¥À ± «√ª”– ˝æ›µƒ£¨º”‘ÿ µÃÂ ±–Ë“™∂‘’‚—˘µƒ«Èøˆ◊ˆ“ª–©≈–∂œ
-				// ¿˝»Á£∫ µÃÂº”‘ÿ ±÷ÿ–¬–¥»Î◊Èº˛ƒ¨»œ ˝æ›÷µ
+				// Â¶ÇÊûú‰∏Ä‰∏™ÂÆû‰ΩìÂ∑≤ÁªèÂ≠òÊ°£ÔºåÂºÄÂèë‰∏≠ÂèàÂØπÂÆû‰ΩìÂä†ÂÖ•‰∫ÜÁªÑ‰ª∂ÔºåÈÇ£‰πàÊï∞ÊçÆÂ∫ì‰∏≠Ê≠§Êó∂ÊòØÊ≤°ÊúâÊï∞ÊçÆÁöÑÔºåÂä†ËΩΩÂÆû‰ΩìÊó∂ÈúÄË¶ÅÂØπËøôÊ†∑ÁöÑÊÉÖÂÜµÂÅö‰∏Ä‰∫õÂà§Êñ≠
+				// ‰æãÂ¶ÇÔºöÂÆû‰ΩìÂä†ËΩΩÊó∂ÈáçÊñ∞ÂÜôÂÖ•ÁªÑ‰ª∂ÈªòËÆ§Êï∞ÊçÆÂÄº
 				bool foundData = dbids.size() > 0;
 				(*s) << foundData;
 
 				if (foundData)
 				{
-					// ¿Ì¬€…œ“ª∂® «≤ªª·¥Û”⁄1∏ˆµƒ
+					// ÁêÜËÆ∫‰∏ä‰∏ÄÂÆöÊòØ‰∏ç‰ºöÂ§ß‰∫é1‰∏™ÁöÑ
 					KBE_ASSERT(dbids.size() == 1);
 					static_cast<EntityTableMysql*>(pChildTable_)->addToStream(s, *iter->second.get(), dbids[0]);
 				}
@@ -1633,9 +1645,11 @@ bool EntityTableItemMysqlBase::initialize(const PropertyDescription* pPropertyDe
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_DIGIT::syncToDB(DBInterface* pdbi, void* pData)
 {
+
 	if(datalength_ == 0)
 	{
 		KBEngine::strutil::kbe_replace(itemDBType_, "(@DATALEN@)", "");
+		KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 		return sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), 
 			db_item_name(), datalength_, this->mysqlItemtype_, this->flags(), pData);
 	}
@@ -1646,11 +1660,13 @@ bool EntityTableItemMysql_DIGIT::syncToDB(DBInterface* pdbi, void* pData)
 	if (length <= 0)
 	{
 		KBEngine::strutil::kbe_replace(itemDBType_, "(@DATALEN@)", "");
+		KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 		kbe_snprintf(sql_str, SQL_BUF, "%s", itemDBType_.c_str());
 	}
 	else
 	{
 		KBEngine::strutil::kbe_replace(itemDBType_, "@DATALEN@", fmt::format("{}", length).c_str());
+		KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 		kbe_snprintf(sql_str, SQL_BUF, "%s", itemDBType_.c_str());
 	}
 
@@ -1817,7 +1833,7 @@ bool EntityTableItemMysql_STRING::syncToDB(DBInterface* pdbi, void* pData)
 	uint32 length = pPropertyDescription_->getDatabaseLength();
 	char sql_str[SQL_BUF];
 
-	// »Áπ˚∏∏±ÌItem «∏ˆπÃ∂®◊÷µ‰£¨ƒ«√¥–Ë“™≈–∂œµ±«∞item”–Œﬁ‘⁄πÃ∂®◊÷µ‰÷–…Ë÷√DatabaseLength
+	// Â¶ÇÊûúÁà∂Ë°®ItemÊòØ‰∏™Âõ∫ÂÆöÂ≠óÂÖ∏ÔºåÈÇ£‰πàÈúÄË¶ÅÂà§Êñ≠ÂΩìÂâçitemÊúâÊó†Âú®Âõ∫ÂÆöÂ≠óÂÖ∏‰∏≠ËÆæÁΩÆDatabaseLength
 	if (this->pParentTableItem() && this->pParentTableItem()->type() == TABLE_ITEM_TYPE_FIXEDDICT)
 	{
 		length = static_cast<KBEngine::EntityTableItemMysql_FIXED_DICT*>(pParentTableItem())->getItemDatabaseLength(this->itemName());
@@ -1825,11 +1841,12 @@ bool EntityTableItemMysql_STRING::syncToDB(DBInterface* pdbi, void* pData)
 
 	if (length <= 0)
 	{
-		// ƒ¨»œ≥§∂»255
+		// ÈªòËÆ§ÈïøÂ∫¶255
 		length = 255;
 	}
 
 	KBEngine::strutil::kbe_replace(itemDBType_, "@DATALEN@", fmt::format("{}", length).c_str());
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 	kbe_snprintf(sql_str, SQL_BUF, "%s", itemDBType_.c_str());
 
 	return sync_item_to_db(pdbi, sql_str, tableName_.c_str(), db_item_name(), length, 
@@ -1889,7 +1906,7 @@ bool EntityTableItemMysql_UNICODE::syncToDB(DBInterface* pdbi, void* pData)
 	uint32 length = pPropertyDescription_->getDatabaseLength();
 	char sql_str[SQL_BUF];
 
-	// »Áπ˚∏∏±ÌItem «∏ˆπÃ∂®◊÷µ‰£¨ƒ«√¥–Ë“™≈–∂œµ±«∞item”–Œﬁ‘⁄πÃ∂®◊÷µ‰÷–…Ë÷√DatabaseLength
+	// Â¶ÇÊûúÁà∂Ë°®ItemÊòØ‰∏™Âõ∫ÂÆöÂ≠óÂÖ∏ÔºåÈÇ£‰πàÈúÄË¶ÅÂà§Êñ≠ÂΩìÂâçitemÊúâÊó†Âú®Âõ∫ÂÆöÂ≠óÂÖ∏‰∏≠ËÆæÁΩÆDatabaseLength
 	if (this->pParentTableItem() && this->pParentTableItem()->type() == TABLE_ITEM_TYPE_FIXEDDICT)
 	{
 		length = static_cast<KBEngine::EntityTableItemMysql_FIXED_DICT*>(pParentTableItem())->getItemDatabaseLength(this->itemName());
@@ -1897,11 +1914,12 @@ bool EntityTableItemMysql_UNICODE::syncToDB(DBInterface* pdbi, void* pData)
 
 	if (length <= 0)
 	{
-		// ƒ¨»œ≥§∂»255
+		// ÈªòËÆ§ÈïøÂ∫¶255
 		length = 255;
 	}
 
 	KBEngine::strutil::kbe_replace(itemDBType_, "@DATALEN@", fmt::format("{}", length).c_str());
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 	kbe_snprintf(sql_str, SQL_BUF, "%s", itemDBType_.c_str());
 
 	return sync_item_to_db(pdbi, sql_str, tableName_.c_str(), db_item_name(), length, 
@@ -1956,6 +1974,8 @@ void EntityTableItemMysql_UNICODE::getReadSqlItem(mysql::DBContext& context)
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_BLOB::syncToDB(DBInterface* pdbi, void* pData)
 {
+
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 	return sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), db_item_name(), 0, 
 		this->mysqlItemtype_, this->flags(), pData);
 }
@@ -2008,6 +2028,8 @@ void EntityTableItemMysql_BLOB::getReadSqlItem(mysql::DBContext& context)
 //-------------------------------------------------------------------------------------
 bool EntityTableItemMysql_PYTHON::syncToDB(DBInterface* pdbi, void* pData)
 {
+
+	KBEngine::strutil::kbe_replace(itemDBType_, "@COMMENT@", fmt::format("COMMENT '{}'", pPropertyDescription_ == nullptr ? "" : pPropertyDescription_->getDescriptionStr()).c_str());
 	return sync_item_to_db(pdbi, itemDBType_.c_str(), tableName_.c_str(), db_item_name(), 0, 
 		this->mysqlItemtype_, this->flags(), pData);
 }

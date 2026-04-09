@@ -8,7 +8,7 @@
 namespace KBEngine { 
 
 /*
-	¼ÇÂ¼event_historyÁ÷Á¿
+	è®°å½•event_historyæµé‡
 */
 class EventHistoryStats
 {

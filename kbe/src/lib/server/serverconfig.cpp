@@ -39,7 +39,8 @@ ServerConfig::ServerConfig():
 	emailServerInfo_(),
 	emailAtivationInfo_(),
 	emailResetPasswordInfo_(),
-	emailBindInfo_()
+	emailBindInfo_(),
+	asyncioRepeatOffset_(0.1f)
 {
 }
 
@@ -64,7 +65,7 @@ bool ServerConfig::loadConfig(std::string fileName)
 	
 	if(xml->getRootNode() == NULL)
 	{
-		// root½ÚµãÏÂÃ»ÓĞ×Ó½ÚµãÁË
+		// rootèŠ‚ç‚¹ä¸‹æ²¡æœ‰å­èŠ‚ç‚¹äº†
 		return true;
 	}
 
@@ -107,7 +108,7 @@ bool ServerConfig::loadConfig(std::string fileName)
 					{
 						Network::g_trace_packet_disables.push_back(c);
 						
-						// ²»debug¼ÓÃÜ°ü
+						// ä¸debugåŠ å¯†åŒ…
 						if(c == "Encrypted::packets")
 							Network::g_trace_encrypted_packet = false;
 					}
@@ -433,6 +434,11 @@ bool ServerConfig::loadConfig(std::string fileName)
 	rootNode = xml->getRootNode("gameUpdateHertz");
 	if(rootNode != NULL){
 		gameUpdateHertz_ = xml->getValInt(rootNode);
+	}
+
+	rootNode = xml->getRootNode("asyncioRepeatOffset");
+	if(rootNode != NULL){
+		asyncioRepeatOffset_ = KBE_MAX(0.01f, float(xml->getValFloat(rootNode)));
 	}
 
 	rootNode = xml->getRootNode("bitsPerSecondToClient");
@@ -981,7 +987,7 @@ bool ServerConfig::loadConfig(std::string fileName)
 					else
 						missingFields.push_back("pure");
 
-					// Ä¬ÈÏ¿â²»ÔÊĞíÊÇ´¿¾»¿â£¬ÒıÇæĞèÒª´´½¨ÊµÌå±í
+					// é»˜è®¤åº“ä¸å…è®¸æ˜¯çº¯å‡€åº“ï¼Œå¼•æ“éœ€è¦åˆ›å»ºå®ä½“è¡¨
 					if (name == "default")
 						pDBInfo->isPure = false;
 
@@ -1133,7 +1139,7 @@ bool ServerConfig::loadConfig(std::string fileName)
 	
 					if (pDBInfo == &dbinfo)
 					{
-						// ¼ì²é²»ÄÜÔÚ²»Í¬µÄ½Ó¿ÚÖĞÊ¹ÓÃÏàÍ¬µÄÊı¾İ¿âÓëÏàÍ¬µÄ±í
+						// æ£€æŸ¥ä¸èƒ½åœ¨ä¸åŒçš„æ¥å£ä¸­ä½¿ç”¨ç›¸åŒçš„æ•°æ®åº“ä¸ç›¸åŒçš„è¡¨
 						std::vector<DBInterfaceInfo>::iterator dbinfo_iter = _dbmgrInfo.dbInterfaceInfos.begin();
 						for (; dbinfo_iter != _dbmgrInfo.dbInterfaceInfos.end(); ++dbinfo_iter)
 						{
@@ -1708,7 +1714,7 @@ uint32 ServerConfig::tcp_SOMAXCONN(COMPONENT_TYPE componentType)
 //-------------------------------------------------------------------------------------	
 void ServerConfig::_updateEmailInfos()
 {
-	// Èç¹ûĞ¡ÓÚ64Ôò±íÊ¾Ä¿Ç°»¹ÊÇÃ÷ÎÄÃÜÂë
+	// å¦‚æœå°äº64åˆ™è¡¨ç¤ºç›®å‰è¿˜æ˜¯æ˜æ–‡å¯†ç 
 	if(emailServerInfo_.password.size() < 64)
 	{
 		WARNING_MSG(fmt::format("ServerConfig::loadConfig: email password(email_service.xml) is not encrypted!\nplease use password(rsa):\n{}\n"

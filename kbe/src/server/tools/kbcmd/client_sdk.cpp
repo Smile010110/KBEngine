@@ -5,6 +5,9 @@
 #include "client_sdk_unity.h"	
 #include "client_sdk_ue4.h"
 #include "client_sdk_ue5.h"
+#include "client_sdk_cxx.h"
+#include "client_sdk_typescript.h"
+#include "client_sdk_csharp.h"
 #include "client_sdk_plugin.h"
 #include "entitydef/entitydef.h"
 #include "entitydef/scriptdef_module.h"
@@ -67,6 +70,18 @@ ClientSDK* ClientSDK::createClientSDK(const std::string& type)
 	{
 		return new ClientSDKPlugin();
 	}
+	else if (lowerType == "typescript")
+	{
+		return new ClientSDKTypeScript();
+	}
+	else if (lowerType == "csharp")
+	{
+		return new ClientSDKCSharp();
+	}
+	else if (lowerType == "cxx")
+	{
+		return new ClientSDKCXX();
+	}
 
 	return NULL;
 }
@@ -85,7 +100,7 @@ void ClientSDK::onCreateEntityModuleFileName(const std::string& moduleName)
 }
 
 //-------------------------------------------------------------------------------------
-bool ClientSDK::saveFile()
+bool ClientSDK::saveFile(bool overwrite)
 {
 	bool done = false;
 
@@ -845,7 +860,7 @@ bool ClientSDK::writeEntityCall(ScriptDefModule* pScriptDefModule)
 
 	std::string newModuleName;
 
-	// œ»–¥BaseEntityCall
+	// ÂÖàÂÜôBaseEntityCall
 	if(!writeBaseEntityCallBegin(pScriptDefModule))
 		return false;
 
@@ -944,7 +959,7 @@ bool ClientSDK::writeEntityCall(ScriptDefModule* pScriptDefModule)
 	headerfileBody_ += fmt::format("\n");
 	sourcefileBody_ += fmt::format("\n");
 
-	// ‘Ÿ–¥CellEntityCall
+	// ÂÜçÂÜôCellEntityCall
 	if (!writeCellEntityCallBegin(pScriptDefModule))
 		return false;
 
@@ -1381,6 +1396,7 @@ bool ClientSDK::writeTypes()
 
 	if (!writeTypesEnd())
 		return false; 
+
 
 	return saveFile();
 }

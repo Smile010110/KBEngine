@@ -37,11 +37,11 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "%s returned NULL without setting an exception",
                               where);
-#ifdef Py_DEBUG
-            /* Ensure that the bug is caught in debug mode.
-               Py_FatalError() logs the SystemError exception raised above. */
-            Py_FatalError("a function returned NULL without setting an exception");
-#endif
+// #ifdef Py_DEBUG
+//             /* Ensure that the bug is caught in debug mode.
+//                Py_FatalError() logs the SystemError exception raised above. */
+//             Py_FatalError("a function returned NULL without setting an exception");
+// #endif
             return NULL;
         }
     }

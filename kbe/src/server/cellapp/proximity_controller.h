@@ -12,7 +12,7 @@ class TrapTrigger;
 class CoordinateNode;
 
 /*
-	¹ÜÀítrap¡£
+	ç®¡ç†trapã€‚
 */
 class ProximityController : public Controller
 {

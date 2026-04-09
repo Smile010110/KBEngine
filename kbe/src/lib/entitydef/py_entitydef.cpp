@@ -399,8 +399,8 @@ bool DefContext::addChildContext(DefContext& defContext)
 	{
 		if ((*iter).attrName == defContext.attrName)
 		{
-			// µ±¶à´ÎassemblyContextsÊ±¿ÉÄÜ»á·¢ÉúÕâÑùµÄÇé¿ö
-			// ²»×ö²Ù×÷¼´¿É
+			// å½“å¤šæ¬¡assemblyContextsæ—¶å¯èƒ½ä¼šå‘ç”Ÿè¿™æ ·çš„æƒ…å†µ
+			// ä¸åšæ“ä½œå³å¯
 			if (moduleName != defContext.moduleName || (*iter).pyObjectSourceFile == defContext.pyObjectSourceFile)
 				return true;
 
@@ -461,7 +461,7 @@ static bool assemblyContexts(bool notfoundModuleError = false)
 		DefContext::allScriptDefContextMaps.erase((*diter));
 	}
 
-	// ³¢ÊÔ½«¸¸ÀàĞÅÏ¢Ìî³äµ½ÅÉÉúÀà
+	// å°è¯•å°†çˆ¶ç±»ä¿¡æ¯å¡«å……åˆ°æ´¾ç”Ÿç±»
 	iter = DefContext::allScriptDefContextMaps.begin();
 	for (; iter != DefContext::allScriptDefContextMaps.end(); ++iter)
 	{
@@ -525,7 +525,7 @@ static bool registerDefContext(DefContext& defContext)
 			return false;
 		}
 
-		// ¼ì²é×÷ÓÃÓòÊÇ·ñÊôÓÚ¸Ã½ø³Ì
+		// æ£€æŸ¥ä½œç”¨åŸŸæ˜¯å¦å±äºè¯¥è¿›ç¨‹
 		bool flagsGood = true;
 
 		if (defContext.componentType == BASEAPP_TYPE)
@@ -579,12 +579,12 @@ static bool registerDefContext(DefContext& defContext)
 			return false;
 		}
 
-		// ÓÉÓÚ¿ÉÄÜ³öÏÖ¿Í»§¶Ë·½·¨µÄÉùÃ÷Ãû³ÆÓë·şÎñÆ÷·½·¨Ò»ÖÂµÄÇé¿ö£¬ÕâÀïĞèÒª½«¿Í»§¶Ë·½·¨ÁÙÊ±×ö¸ö±ğÃû
+		// ç”±äºå¯èƒ½å‡ºç°å®¢æˆ·ç«¯æ–¹æ³•çš„å£°æ˜åç§°ä¸æœåŠ¡å™¨æ–¹æ³•ä¸€è‡´çš„æƒ…å†µï¼Œè¿™é‡Œéœ€è¦å°†å®¢æˆ·ç«¯æ–¹æ³•ä¸´æ—¶åšä¸ªåˆ«å
 		name += ".#client#." + defContext.attrName;
 	}
 	else if (defContext.type == DefContext::DC_TYPE_FIXED_ITEM)
 	{
-		// ×ÖµäÀïÃæµÄ×Ö¶Î·Å¿ª¹Ø¼ü×ÖÏŞÖÆ£¬ÀıÈçÔÊĞí¶¨ÒåÃû³ÆÎªidµÄ×Ö¶Î
+		// å­—å…¸é‡Œé¢çš„å­—æ®µæ”¾å¼€å…³é”®å­—é™åˆ¶ï¼Œä¾‹å¦‚å…è®¸å®šä¹‰åç§°ä¸ºidçš„å­—æ®µ
 		//if (!EntityDef::validDefPropertyName(defContext.attrName))
 		//{
 		//	PyErr_Format(PyExc_AssertionError, "EntityDef.%s: '%s.%s' is limited!\n\n",
@@ -613,7 +613,7 @@ static bool registerDefContext(DefContext& defContext)
 	{
 		if (iter->second.pyObjectSourceFile != defContext.pyObjectSourceFile)
 		{
-			// Èç¹ûÊÇ²»Í¬½ø³ÌµÄ½Å±¾²¿·Ö£¬ÄÇÃ´ĞèÒª½øĞĞºÏ²¢×¢²á
+			// å¦‚æœæ˜¯ä¸åŒè¿›ç¨‹çš„è„šæœ¬éƒ¨åˆ†ï¼Œé‚£ä¹ˆéœ€è¦è¿›è¡Œåˆå¹¶æ³¨å†Œ
 			if (iter->second.componentType != defContext.componentType && DefContext::allScriptDefContextLineMaps.find(defContext.pyObjectSourceFile) != DefContext::allScriptDefContextLineMaps.end() &&
 				(defContext.type == DefContext::DC_TYPE_ENTITY || defContext.type == DefContext::DC_TYPE_COMPONENT || defContext.type == DefContext::DC_TYPE_INTERFACE) && 
 				iter->second.type == defContext.type)
@@ -636,7 +636,7 @@ static bool registerDefContext(DefContext& defContext)
 						iter->second.hasClient = true;
 				}
 
-				// ½Å±¾¶ÔÏóÇ¿ÖÆÉèÖÃÎªµ±Ç°½ø³ÌµÄ¶ÔÏó
+				// è„šæœ¬å¯¹è±¡å¼ºåˆ¶è®¾ç½®ä¸ºå½“å‰è¿›ç¨‹çš„å¯¹è±¡
 				if (g_componentType == defContext.componentType)
 				{
 					iter->second.pyObjectPtr = defContext.pyObjectPtr;
@@ -806,7 +806,7 @@ static bool isRefEntityDefModule(PyObject *pyObj)
 		}	\
 		else	\
 		{	\
-			/* ·ÀÖ¹²»Í¬ÏµÍ³Ôì³ÉµÄÂ·¾¶²»Ò»ÖÂ£¬ÌŞ³ıÏµÍ³Ïà¹ØÂ·¾¶ */		\
+			/* é˜²æ­¢ä¸åŒç³»ç»Ÿé€ æˆçš„è·¯å¾„ä¸ä¸€è‡´ï¼Œå‰”é™¤ç³»ç»Ÿç›¸å…³è·¯å¾„ */		\
 			OUT = PyUnicode_AsUTF8AndSize(pyFile, NULL);	\
 			strutil::kbe_replace(OUT, "\\\\", "/");	\
 			strutil::kbe_replace(OUT, "\\", "/");	\
@@ -849,7 +849,7 @@ static bool isRefEntityDefModule(PyObject *pyObj)
 		}	\
 		else	\
 		{	\
-			/* ¼ÓÉÏĞĞºÅ£¬±ÜÃâÍ¬ÎÄ¼şÖĞ¶à´Î¶¨Òå */		\
+			/* åŠ ä¸Šè¡Œå·ï¼Œé¿å…åŒæ–‡ä»¶ä¸­å¤šæ¬¡å®šä¹‰ */		\
 			OUT += fmt::format("#{}",  PyLong_AsLong(pyLine));	\
 			Py_DECREF(pyLine);	\
 		}	\
@@ -1064,8 +1064,8 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 				PY_RETURN_ERROR;
 			}
 
-			// Èç¹ûÊÇÊı¾İÀàĞÍ¶¨Òå£¬Ä¬ÈÏÓ¦¸ÃÊÇ´æ´¢µÄ
-			// fixed_itemÖ»ÓĞ¶¨Òåfixed_dictÊ±»áÓÃµ½
+			// å¦‚æœæ˜¯æ•°æ®ç±»å‹å®šä¹‰ï¼Œé»˜è®¤åº”è¯¥æ˜¯å­˜å‚¨çš„
+			// fixed_itemåªæœ‰å®šä¹‰fixed_dictæ—¶ä¼šç”¨åˆ°
 			defContext.persistent = true;
 
 			if (pyPersistent)
@@ -1075,7 +1075,7 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 				defContext.databaseLength = (int)PyLong_AsLong(pyDatabaseLength);
 		}
 
-		// ¶ÔÓÚÊôĞÔ£¬ ÎÒÃÇĞèÒª»ñµÃ·µ»ØÖµ×÷ÎªÄ¬ÈÏÖµ
+		// å¯¹äºå±æ€§ï¼Œ æˆ‘ä»¬éœ€è¦è·å¾—è¿”å›å€¼ä½œä¸ºé»˜è®¤å€¼
 		PyObject* pyRet = PyObject_CallFunction(pyFunc,
 			const_cast<char*>("(O)"), Py_None);
 
@@ -1148,7 +1148,7 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 				PY_RETURN_ERROR;
 			}
 
-			// Èç¹ûÊÇ×é¼şÊôĞÔ£¬Ä¬ÈÏÓ¦¸ÃÊÇ²»´æ´¢µÄ
+			// å¦‚æœæ˜¯ç»„ä»¶å±æ€§ï¼Œé»˜è®¤åº”è¯¥æ˜¯ä¸å­˜å‚¨çš„
 			defContext.persistent = false;
 
 			if (pyPersistent)
@@ -1327,7 +1327,7 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 
 					std::string svalue = "";
 
-					// Èç¹ûÊÇEntityDef.ArrayÔò´Ë´¦¿ÉÄÜÊÇÒ»¸ötuple£¬²Î¿¼__py_array
+					// å¦‚æœæ˜¯EntityDef.Arrayåˆ™æ­¤å¤„å¯èƒ½æ˜¯ä¸€ä¸ªtupleï¼Œå‚è€ƒ__py_array
 					if (PyTuple_Check(value) && PyTuple_Size(value) == 2)
 					{
 						PyObject *entitydefModule = PyImport_AddModule(pyDefModuleName.c_str());
@@ -1472,7 +1472,7 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 	}
 	else if (defContext.optionName == "property")
 	{
-		// ÑéÖ¤Õâ¸ö×Ö·û´®ÊÇ·ñ¿ÉÒÔ»¹Ô­³É¶ÔÏó
+		// éªŒè¯è¿™ä¸ªå­—ç¬¦ä¸²æ˜¯å¦å¯ä»¥è¿˜åŸæˆå¯¹è±¡
 		if (defContext.propertyDefaultVal.size() > 0)
 		{
 			PyObject* module = PyImport_AddModule("__main__");
@@ -1520,20 +1520,20 @@ static PyObject* __py_def_parse(PyObject *self, PyObject* args)
 	}
 	else if (defContext.optionName == "anonymous_fixed_array")
 	{
-		// ´´½¨Ò»¸öĞÂÊı×é
+		// åˆ›å»ºä¸€ä¸ªæ–°æ•°ç»„
 		DefContext arrayType;
 		arrayType = defContext;
 		arrayType.moduleName += ".anonymous_fixed_array";
 
-		// ·ÀÖ¹2¸öÔ´ÎÄ¼şĞĞÊıÒ»ÖÂ£¬µ×²ãÈÏÎªÖØ¸´Ìí¼Ó
+		// é˜²æ­¢2ä¸ªæºæ–‡ä»¶è¡Œæ•°ä¸€è‡´ï¼Œåº•å±‚è®¤ä¸ºé‡å¤æ·»åŠ 
 		arrayType.pyObjectSourceFile += "(array)";
 
-		// Ôö¼ÓÒ»¸öitemÀà±ğ
+		// å¢åŠ ä¸€ä¸ªitemç±»åˆ«
 		DefContext itemType;
 		itemType = arrayType;
 		itemType.optionName = "fixed_item";
 
-		// ·ÀÖ¹2¸öÔ´ÎÄ¼şĞĞÊıÒ»ÖÂ£¬µ×²ãÈÏÎªÖØ¸´Ìí¼Ó
+		// é˜²æ­¢2ä¸ªæºæ–‡ä»¶è¡Œæ•°ä¸€è‡´ï¼Œåº•å±‚è®¤ä¸ºé‡å¤æ·»åŠ 
 		itemType.pyObjectSourceFile += "(array_item)";
 
 		noerror = onDefFixedItem(itemType);
@@ -1584,7 +1584,7 @@ static PyObject* __py_def_rename(PyObject* self, PyObject* args, PyObject* kwarg
 	cc.pyKwargs = kwargs ? PyObjectPtr(Copy::deepcopy(kwargs), PyObjectPtr::STEAL_REF) : PyObjectPtr(NULL);
 	cc.optionName = "rename";
 
-	// ÀàËÆÕâÖÖ¶¨Òå·½Ê½ EntityDef.rename(ENTITY_ID=EntityDef.INT32)
+	// ç±»ä¼¼è¿™ç§å®šä¹‰æ–¹å¼ EntityDef.rename(ENTITY_ID=EntityDef.INT32)
 	if (kwargs)
 	{
 		PyObject *key, *value;
@@ -1680,7 +1680,7 @@ static PyObject* __py_def_fixed_array(PyObject* self, PyObject* args, PyObject* 
 	cc.pyKwargs = kwargs ? PyObjectPtr(Copy::deepcopy(kwargs), PyObjectPtr::STEAL_REF) : PyObjectPtr(NULL);
 	cc.optionName = "fixed_array";
 
-	// ÀàËÆÕâÖÖ¶¨Òå·½Ê½ EntityDef.fixed_array(XXArray=EntityDef.INT32)
+	// ç±»ä¼¼è¿™ç§å®šä¹‰æ–¹å¼ EntityDef.fixed_array(XXArray=EntityDef.INT32)
 	if (kwargs)
 	{
 		PyObject *key, *value;
@@ -1765,7 +1765,7 @@ static PyObject* __py_def_fixed_array(PyObject* self, PyObject* args, PyObject* 
 	g_callContexts.push(cc);
 
 	// @EntityDef.fixed_array()
-	// class XXXArray£º
+	// class XXXArrayï¼š
 	return PyCFunction_New(&__call_def_parse, self);
 }
 
@@ -1885,7 +1885,7 @@ static bool loadAllScriptForComponentType(COMPONENT_TYPE loadComponentType)
 	std::vector<std::wstring> results;
 	Resmgr::getSingleton().listPathRes(wpath, L"py|pyc", results);
 
-	// ÓÅÏÈÖ´ĞĞÈë¿Ú½Å±¾
+	// ä¼˜å…ˆæ‰§è¡Œå…¥å£è„šæœ¬
 	std::vector<std::wstring>::iterator iter = results.begin();
 	for (; iter != results.end(); )
 	{
@@ -1986,14 +1986,14 @@ static void reset_sys_path_after_init(const wchar_t *pathListString)
         return;
     }
 
-    // Æ½Ì¨×Ô¶¯Ñ¡Ôñ·Ö¸ô·û
+    // å¹³å°è‡ªåŠ¨é€‰æ‹©åˆ†éš”ç¬¦
 #if defined(_WIN32)
     const wchar_t sep = L';';
 #else
     const wchar_t sep = L':';
 #endif
 
-    // ÓÃ stringstream ·Ö¸î pathListString
+    // ç”¨ stringstream åˆ†å‰² pathListString
     std::wstringstream ss(pathListString);
     std::wstring item;
     while (std::getline(ss, item, sep)) {
@@ -2008,7 +2008,7 @@ static void reset_sys_path_after_init(const wchar_t *pathListString)
         }
     }
 
-    // ÉèÖÃ sys.path
+    // è®¾ç½® sys.path
     if (PyObject_SetAttrString(sys, "path", new_path_list) != 0) {
         PyErr_Print();
     }
@@ -2085,10 +2085,10 @@ static bool execPython(COMPONENT_TYPE componentType)
 		}
 	}
 
-	// ÖØ¶¨ÏòpythonÊä³ö
+	// é‡å®šå‘pythonè¾“å‡º
 	ScriptStdOutErr* pyStdouterr = new ScriptStdOutErr();
 
-	// °²×°pyÖØ¶¨Ïò½Å±¾Ä£¿é
+	// å®‰è£…pyé‡å®šå‘è„šæœ¬æ¨¡å—
 	if (!pyStdouterr->install()) 
 	{
 		ERROR_MSG("PyEntityDef::execPython(): pyStdouterr->install() is failed!\n");
@@ -2099,7 +2099,7 @@ static bool execPython(COMPONENT_TYPE componentType)
 
 	PyObject *m = PyImport_AddModule("__main__");
 
-	// Ìí¼ÓÒ»¸ö½Å±¾»ù´¡Ä£¿é
+	// æ·»åŠ ä¸€ä¸ªè„šæœ¬åŸºç¡€æ¨¡å—
 	PyObject* kbeModule = PyImport_AddModule("KBEngine");
 	KBE_ASSERT(kbeModule);
 
@@ -2121,7 +2121,7 @@ static bool execPython(COMPONENT_TYPE componentType)
 
 	APPEND_SCRIPT_MODULE_METHOD(kbeModule, publish, __py_getAppPublish, METH_VARARGS, 0);
 
-	// ½«Ä£¿é¶ÔÏó¼ÓÈëmain
+	// å°†æ¨¡å—å¯¹è±¡åŠ å…¥main
 	PyObject_SetAttrString(m, "KBEngine", kbeModule);
 
 	if (pNewInterpreter != PyThreadState_Swap(pCurInterpreter))
@@ -2151,14 +2151,14 @@ static bool execPython(COMPONENT_TYPE componentType)
 	}
 
 
-	// Ö´ĞĞÇåÀí
+	// æ‰§è¡Œæ¸…ç†
 	/*
-	Õâ¸öº¯Êı»á£º
-	Çå³ı½âÊÍÆ÷ÄÚ×¢²áµÄÄ£¿é¡¢ÄÚ½¨¶ÔÏó¡¢×Ö·û´®»º´æµÈ¡£
-	»á·ÃÎÊ»òÇå³ıÓëµ±Ç° PyThreadState ÓĞ¹ØµÄÄÚÈİ£¨Èçµ±Ç° frame¡¢Òì³£×´Ì¬¡¢sys dict£©¡£
+	è¿™ä¸ªå‡½æ•°ä¼šï¼š
+	æ¸…é™¤è§£é‡Šå™¨å†…æ³¨å†Œçš„æ¨¡å—ã€å†…å»ºå¯¹è±¡ã€å­—ç¬¦ä¸²ç¼“å­˜ç­‰ã€‚
+	ä¼šè®¿é—®æˆ–æ¸…é™¤ä¸å½“å‰ PyThreadState æœ‰å…³çš„å†…å®¹ï¼ˆå¦‚å½“å‰ frameã€å¼‚å¸¸çŠ¶æ€ã€sys dictï¼‰ã€‚
 
-	ËùÒÔĞèÒªÌáµ½PyThreadState_Swap(pCurInterpreter)Ç°£¬Èç¹û´ËÊ±µ±Ç°Ïß³ÌÈÔÈ»°ó¶¨µÄÊÇ¡°Ö÷½âÊÍÆ÷¡±£¬
-	Äã¾ÍÏàµ±ÓÚÓÃ Ö÷½âÊÍÆ÷Ïß³ÌÈ¥ĞŞ¸Ä/ÊÍ·ÅÁíÒ»¸ö×Ó½âÊÍÆ÷µÄÄÚ´æ½á¹¹ ¡ª¡ª ÕâÊÇÎ´¶¨ÒåĞĞÎª£¬ĞÂ°æ Python »áÖ±½Ó´¥·¢¶ÏÑÔ»ò±ÀÀ£¡£
+	æ‰€ä»¥éœ€è¦æåˆ°PyThreadState_Swap(pCurInterpreter)å‰ï¼Œå¦‚æœæ­¤æ—¶å½“å‰çº¿ç¨‹ä»ç„¶ç»‘å®šçš„æ˜¯â€œä¸»è§£é‡Šå™¨â€ï¼Œ
+	ä½ å°±ç›¸å½“äºç”¨ ä¸»è§£é‡Šå™¨çº¿ç¨‹å»ä¿®æ”¹/é‡Šæ”¾å¦ä¸€ä¸ªå­è§£é‡Šå™¨çš„å†…å­˜ç»“æ„ â€”â€” è¿™æ˜¯æœªå®šä¹‰è¡Œä¸ºï¼Œæ–°ç‰ˆ Python ä¼šç›´æ¥è§¦å‘æ–­è¨€æˆ–å´©æºƒã€‚
 	*/
 	PyInterpreterState_Clear(pNewInterpreter->interp);
 
@@ -2168,13 +2168,13 @@ static bool execPython(COMPONENT_TYPE componentType)
 		KBE_ASSERT(false);
 		return false;
 	}
-	// Ïú»ÙÏß³Ì
+	// é”€æ¯çº¿ç¨‹
 	PyThreadState_Delete(pNewInterpreter);
 
 
-	//// ´Ë´¦²»ÄÜÊ¹ÓÃPy_EndInterpreter£¬»áµ¼ÖÂMath¡¢DefµÈÄ£¿éÎö¹¹
+	//// æ­¤å¤„ä¸èƒ½ä½¿ç”¨Py_EndInterpreterï¼Œä¼šå¯¼è‡´Mathã€Defç­‰æ¨¡å—ææ„
 	//PyInterpreterState_Clear(pNewInterpreter->interp);
-	// ĞÂ°æ Python ¸üÇ¿µ÷¡°½âÊÍÆ÷¸ôÀë¡±£¬Ö±½Ó Delete »áµ¼ÖÂ¿çÏß³Ì¶ÏÑÔÊ§°Ü¡£
+	// æ–°ç‰ˆ Python æ›´å¼ºè°ƒâ€œè§£é‡Šå™¨éš”ç¦»â€ï¼Œç›´æ¥ Delete ä¼šå¯¼è‡´è·¨çº¿ç¨‹æ–­è¨€å¤±è´¥ã€‚
 	//PyInterpreterState_Delete(pNewInterpreter->interp);
 
 	return otherPartSuccess;
@@ -2293,7 +2293,7 @@ static bool registerDefTypes()
 	std::vector< DefContext* > defContexts;
 
 	{
-		// ÓÉÓÚ×¢²áµÄÀàĞÍÓĞÏÈºóÒÀÀµ¹ØÏµ£¬ÕâÀï¶ÔËûÃÇ×ö¸öÅÅĞòÔÙºóĞø´¦Àí
+		// ç”±äºæ³¨å†Œçš„ç±»å‹æœ‰å…ˆåä¾èµ–å…³ç³»ï¼Œè¿™é‡Œå¯¹ä»–ä»¬åšä¸ªæ’åºå†åç»­å¤„ç†
 		DefContext::DEF_CONTEXT_MAP::iterator iter = DefContext::allScriptDefContextMaps.begin();
 		for (; iter != DefContext::allScriptDefContextMaps.end(); ++iter)
 		{
@@ -2401,13 +2401,13 @@ static bool registerDefMethods(ScriptDefModule* pScriptModule, DefContext& defCo
 
 		size_t argIdx = 0;
 
-		// ¼ì²éµÚÒ»¸ö²ÎÊıÊÇ·ñÊÇExposed callerID
+		// æ£€æŸ¥ç¬¬ä¸€ä¸ªå‚æ•°æ˜¯å¦æ˜¯Exposed callerID
 		if (defMethodContext.argsvecs.size() > 0)
 		{
 			std::string argName = defMethodContext.argsvecs[0];
 			std::string argType = defMethodContext.annotationsMaps[argName];
 
-			// Èç¹ûÊÇexposed·½·¨µÄcallerID²ÎÊı¾ÍºöÂÔ
+			// å¦‚æœæ˜¯exposedæ–¹æ³•çš„callerIDå‚æ•°å°±å¿½ç•¥
 			if (argType == "CALLER_ID")
 			{
 				if (!defMethodContext.exposed)
@@ -2445,7 +2445,7 @@ static bool registerDefMethods(ScriptDefModule* pScriptModule, DefContext& defCo
 			std::string argName = defMethodContext.argsvecs[argIdx];
 			std::string argType = defMethodContext.annotationsMaps[argName];
 
-			// Èç¹ûÊÇexposed·½·¨µÄcallerID²ÎÊı¾ÍºöÂÔ
+			// å¦‚æœæ˜¯exposedæ–¹æ³•çš„callerIDå‚æ•°å°±å¿½ç•¥
 			if (argType == "CALLER_ID")
 			{
 				ERROR_MSG(fmt::format("PyEntityDef::registerDefMethods: Def.CallerID must be the first parameter! is {}.{}(arg={}), file: \"{}\"!\n",
@@ -2513,7 +2513,7 @@ static bool registerDefMethods(ScriptDefModule* pScriptModule, DefContext& defCo
 		}
 	}
 
-	// ³ıÁËÕâ¼¸¸ö½ø³ÌÒÔÍâ£¬ÆäËû½ø³Ì²»ĞèÒª¸ù¾İ·½·¨¼ì²â½Å±¾µÄÕıÈ·ĞÔ
+	// é™¤äº†è¿™å‡ ä¸ªè¿›ç¨‹ä»¥å¤–ï¼Œå…¶ä»–è¿›ç¨‹ä¸éœ€è¦æ ¹æ®æ–¹æ³•æ£€æµ‹è„šæœ¬çš„æ­£ç¡®æ€§
 	if (g_componentType == BASEAPP_TYPE || g_componentType == CELLAPP_TYPE || g_componentType == BOTS_TYPE || g_componentType == CLIENT_TYPE)
 	{
 		if (!EntityDef::checkDefMethod(pScriptModule, defContext.pyObjectPtr.get(), defContext.moduleName))
@@ -2545,8 +2545,8 @@ static bool registerDefPropertys(ScriptDefModule* pScriptModule, DefContext& def
 		int32						hasClientFlags = 0;
 		DataType*					dataType = NULL;
 		bool						isPersistent = (defPropContext.persistent != 0);
-		bool						isIdentifier = false;									// ÊÇ·ñÊÇÒ»¸öË÷Òı¼ü
-		uint32						databaseLength = defPropContext.databaseLength;			// Õâ¸öÊôĞÔÔÚÊı¾İ¿âÖĞµÄ³¤¶È
+		bool						isIdentifier = false;									// æ˜¯å¦æ˜¯ä¸€ä¸ªç´¢å¼•é”®
+		uint32						databaseLength = defPropContext.databaseLength;			// è¿™ä¸ªå±æ€§åœ¨æ•°æ®åº“ä¸­çš„é•¿åº¦
 		std::string					indexType = defPropContext.propertyIndex;
 		DETAIL_TYPE					detailLevel = DETAIL_LEVEL_FAR;
 		std::string					name = defPropContext.attrName;
@@ -2604,7 +2604,7 @@ static bool registerDefPropertys(ScriptDefModule* pScriptModule, DefContext& def
 				return false;
 			}
 
-			// ×é¼ş·Åµ½×é¼şº¯ÊıÖĞ´¦Àí
+			// ç»„ä»¶æ”¾åˆ°ç»„ä»¶å‡½æ•°ä¸­å¤„ç†
 			if (pDefPropTypeContext->type == DefContext::DC_TYPE_COMPONENT)
 				continue;
 
@@ -2630,16 +2630,16 @@ static bool registerDefPropertys(ScriptDefModule* pScriptModule, DefContext& def
 			return false;
 		}
 
-		// ²úÉúÒ»¸öÊôĞÔÃèÊöÊµÀı
+		// äº§ç”Ÿä¸€ä¸ªå±æ€§æè¿°å®ä¾‹
 		PropertyDescription* propertyDescription = PropertyDescription::createDescription(futype, defPropContext.returnType,
 			name, flags, isPersistent,
 			dataType, isIdentifier, indexType,
 			databaseLength, defPropContext.propertyDefaultVal,
-			detailLevel);
+			detailLevel,"");
 
 		bool ret = true;
 
-		// Ìí¼Óµ½Ä£¿éÖĞ
+		// æ·»åŠ åˆ°æ¨¡å—ä¸­
 		if (hasCellFlags > 0)
 			ret = pScriptModule->addPropertyDescription(name.c_str(),
 				propertyDescription, CELLAPP_TYPE);
@@ -2691,10 +2691,10 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 		if (!EntityDef::calcDefPropertyUType(pScriptModule->getName(), componentName, defPropContext.utype > 0 ? defPropContext.utype : -1, pScriptModule, futype))
 			return false;
 
-		// ²úÉúÒ»¸öÊôĞÔÃèÊöÊµÀı
+		// äº§ç”Ÿä¸€ä¸ªå±æ€§æè¿°å®ä¾‹
 		uint32						flags = ED_FLAG_BASE | ED_FLAG_CELL_PUBLIC | ENTITY_CLIENT_DATA_FLAGS;
-		bool						isIdentifier = false;		// ÊÇ·ñÊÇÒ»¸öË÷Òı¼ü
-		uint32						databaseLength = 0;			// Õâ¸öÊôĞÔÔÚÊı¾İ¿âÖĞµÄ³¤¶È
+		bool						isIdentifier = false;		// æ˜¯å¦æ˜¯ä¸€ä¸ªç´¢å¼•é”®
+		uint32						databaseLength = 0;			// è¿™ä¸ªå±æ€§åœ¨æ•°æ®åº“ä¸­çš„é•¿åº¦
 		std::string					indexType = "";
 		DETAIL_TYPE					detailLevel = DETAIL_LEVEL_FAR;
 		std::string					detailLevelStr = "";
@@ -2709,7 +2709,7 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 			return false;
 		}
 
-		// ²éÕÒÊÇ·ñÓĞÕâ¸öÄ£¿é£¬Èç¹ûÓĞËµÃ÷ÒÑ¾­¼ÓÔØ¹ıÏà¹ØÃèÊö£¬ÕâÀïÎŞĞèÔÙ´Î¼ÓÔØ
+		// æŸ¥æ‰¾æ˜¯å¦æœ‰è¿™ä¸ªæ¨¡å—ï¼Œå¦‚æœæœ‰è¯´æ˜å·²ç»åŠ è½½è¿‡ç›¸å…³æè¿°ï¼Œè¿™é‡Œæ— éœ€å†æ¬¡åŠ è½½
 		ScriptDefModule* pCompScriptDefModule = EntityDef::findScriptModule(componentTypeName.c_str(), false);
 
 		if (!pCompScriptDefModule)
@@ -2745,11 +2745,11 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 
 		autosetHasClient(*pDefPropTypeContext);
 
-		// ³ıÁËÕâ¼¸¸ö½ø³ÌÒÔÍâ£¬ÆäËû½ø³Ì²»ĞèÒª·ÃÎÊ½Å±¾
+		// é™¤äº†è¿™å‡ ä¸ªè¿›ç¨‹ä»¥å¤–ï¼Œå…¶ä»–è¿›ç¨‹ä¸éœ€è¦è®¿é—®è„šæœ¬
 		if (g_componentType == BASEAPP_TYPE || g_componentType == CELLAPP_TYPE || g_componentType == BOTS_TYPE || g_componentType == CLIENT_TYPE)
 		{
-			// Èç¹ûÊÇbotsÀàĞÍ£¬ĞèÒª½«½Å±¾ÀàÉèÖÃÎª³ÌĞò»·¾³µÄÀà
-			// ×¢Òâ£ºÈç¹ûÊÇCLIENT_TYPEÊ¹ÓÃdefÎÄ¼şÄ£Ê½»òÕß½«¶¨Òå·ÅÔÚÒ»¸öcommonµÄpyÖĞ£¬ÒòÎª¸ÃÄ£Ê½Ïà¹Ø¶¨Òå¶¼ÔÚ·şÎñÆ÷´úÂëÉÏ£¬¶ø¿Í»§¶Ë»·¾³Ã»ÓĞ·şÎñÆ÷´úÂë
+			// å¦‚æœæ˜¯botsç±»å‹ï¼Œéœ€è¦å°†è„šæœ¬ç±»è®¾ç½®ä¸ºç¨‹åºç¯å¢ƒçš„ç±»
+			// æ³¨æ„ï¼šå¦‚æœæ˜¯CLIENT_TYPEä½¿ç”¨defæ–‡ä»¶æ¨¡å¼æˆ–è€…å°†å®šä¹‰æ”¾åœ¨ä¸€ä¸ªcommonçš„pyä¸­ï¼Œå› ä¸ºè¯¥æ¨¡å¼ç›¸å…³å®šä¹‰éƒ½åœ¨æœåŠ¡å™¨ä»£ç ä¸Šï¼Œè€Œå®¢æˆ·ç«¯ç¯å¢ƒæ²¡æœ‰æœåŠ¡å™¨ä»£ç 
 			if ((g_componentType == BOTS_TYPE || g_componentType == CLIENT_TYPE) && pDefPropTypeContext->hasClient)
 			{
 				if (!updateScript(*pDefPropTypeContext))
@@ -2775,7 +2775,7 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 			}
 		}
 
-		// ×¢²áÊôĞÔÃèÊö
+		// æ³¨å†Œå±æ€§æè¿°
 		if (!registerDefPropertys(pCompScriptDefModule, *pDefPropTypeContext))
 		{
 			ERROR_MSG(fmt::format("PyEntityDef::registerDefComponents: failed to registerDefPropertys(), entity:{}\n",
@@ -2784,7 +2784,7 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 			return false;
 		}
 
-		// ×¢²á·½·¨ÃèÊö
+		// æ³¨å†Œæ–¹æ³•æè¿°
 		if(!registerDefMethods(pCompScriptDefModule, *pDefPropTypeContext))
 		{
 			ERROR_MSG(fmt::format("PyEntityDef::registerDefComponents: failed to registerDefMethods(), entity:{}\n",
@@ -2793,7 +2793,7 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 			return false;
 		}
 
-		// ³¢ÊÔ¼ÓÔØdetailLevelInfoÊı¾İ
+		// å°è¯•åŠ è½½detailLevelInfoæ•°æ®
 		if (!registerDetailLevelInfo(pCompScriptDefModule, *pDefPropTypeContext))
 		{
 			ERROR_MSG(fmt::format("PyEntityDef::registerDefComponents: failed to register component:{} detailLevelInfo.\n",
@@ -2833,7 +2833,7 @@ static bool registerDefComponents(ScriptDefModule* pScriptModule, DefContext& de
 //-------------------------------------------------------------------------------------
 static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defContext)
 {
-	// ×¢²áÊôĞÔÃèÊö
+	// æ³¨å†Œå±æ€§æè¿°
 	if (!registerDefPropertys(pScriptModule, defContext))
 	{
 		ERROR_MSG(fmt::format("PyEntityDef::registerEntityDef: failed to registerDefPropertys(), entity:{}\n",
@@ -2842,7 +2842,7 @@ static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defCon
 		return false;
 	}
 
-	// ×¢²á·½·¨ÃèÊö
+	// æ³¨å†Œæ–¹æ³•æè¿°
 	if (!registerDefMethods(pScriptModule, defContext))
 	{
 		ERROR_MSG(fmt::format("PyEntityDef::registerDefComponents: failed to registerDefMethods(), entity:{}\n",
@@ -2851,7 +2851,7 @@ static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defCon
 		return false;
 	}
 
-	// ×¢²á×é¼şÃèÊö£¬ ²¢½«ËûÃÇµÄ·½·¨ºÍÊôĞÔ¼ÓÈëµ½Ä£¿éÖĞ
+	// æ³¨å†Œç»„ä»¶æè¿°ï¼Œ å¹¶å°†ä»–ä»¬çš„æ–¹æ³•å’Œå±æ€§åŠ å…¥åˆ°æ¨¡å—ä¸­
 	if (!registerDefComponents(pScriptModule, defContext))
 	{
 		ERROR_MSG(fmt::format("PyEntityDef::registerEntityDef: failed to registerDefComponents(), component:{}\n",
@@ -2860,7 +2860,7 @@ static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defCon
 		return false;
 	}
 
-	// ³¢ÊÔ×¢²ádetailLevelInfoÊı¾İ
+	// å°è¯•æ³¨å†ŒdetailLevelInfoæ•°æ®
 	if (!registerDetailLevelInfo(pScriptModule, defContext))
 	{
 		ERROR_MSG(fmt::format("PyEntityDef::registerEntityDef: failed to register entity:{} detailLevelInfo.\n",
@@ -2869,7 +2869,7 @@ static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defCon
 		return false;
 	}
 
-	// ³¢ÊÔ×¢²ávolatileInfoÊı¾İ
+	// å°è¯•æ³¨å†ŒvolatileInfoæ•°æ®
 	if (!registerVolatileInfo(pScriptModule, defContext))
 	{
 		ERROR_MSG(fmt::format("PyEntityDef::registerEntityDef: failed to register entity:{} volatileInfo.\n",
@@ -2878,7 +2878,7 @@ static bool registerEntityDef(ScriptDefModule* pScriptModule, DefContext& defCon
 		return false;
 	}
 
-	// ³ıÁËÕâ¼¸¸ö½ø³ÌÒÔÍâ£¬ÆäËû½ø³Ì²»ĞèÒª·ÃÎÊ½Å±¾
+	// é™¤äº†è¿™å‡ ä¸ªè¿›ç¨‹ä»¥å¤–ï¼Œå…¶ä»–è¿›ç¨‹ä¸éœ€è¦è®¿é—®è„šæœ¬
 	if (g_componentType == BASEAPP_TYPE || g_componentType == CELLAPP_TYPE || g_componentType == BOTS_TYPE || g_componentType == CLIENT_TYPE)
 	{
 		if (defContext.pyObjectSourceFileComponentType == g_componentType)
@@ -2918,12 +2918,12 @@ static bool registerEntityDefs()
 		if (defContext.type != DefContext::DC_TYPE_ENTITY)
 			continue;
 
-		// ¸ù¾İÊÇ·ñ°üº¬¿Í»§¶ËÊôĞÔ»òÕß·½·¨¾ö¶¨ÊÇ·ñÕâ¸öÊµÌåÓµÓĞ¿Í»§¶Ë²¿·Ö
-		// hasClient=TrueÒ²¿ÉÒÔÇ¿ÖÆÖ¸¶¨ÓµÓĞ¿Í»§¶Ë²¿·Ö
+		// æ ¹æ®æ˜¯å¦åŒ…å«å®¢æˆ·ç«¯å±æ€§æˆ–è€…æ–¹æ³•å†³å®šæ˜¯å¦è¿™ä¸ªå®ä½“æ‹¥æœ‰å®¢æˆ·ç«¯éƒ¨åˆ†
+		// hasClient=Trueä¹Ÿå¯ä»¥å¼ºåˆ¶æŒ‡å®šæ‹¥æœ‰å®¢æˆ·ç«¯éƒ¨åˆ†
 		// autosetHasClient(defContext);
 
-		// Èç¹ûÊÇbotsÀàĞÍ£¬ĞèÒª½«½Å±¾ÀàÉèÖÃÎª³ÌĞò»·¾³µÄÀà
-		// ×¢Òâ£ºÈç¹ûÊÇCLIENT_TYPEÊ¹ÓÃdefÎÄ¼şÄ£Ê½»òÕß½«¶¨Òå·ÅÔÚÒ»¸öcommonµÄpyÖĞ£¬ÒòÎª¸ÃÄ£Ê½Ïà¹Ø¶¨Òå¶¼ÔÚ·şÎñÆ÷´úÂëÉÏ£¬¶ø¿Í»§¶Ë»·¾³Ã»ÓĞ·şÎñÆ÷´úÂë
+		// å¦‚æœæ˜¯botsç±»å‹ï¼Œéœ€è¦å°†è„šæœ¬ç±»è®¾ç½®ä¸ºç¨‹åºç¯å¢ƒçš„ç±»
+		// æ³¨æ„ï¼šå¦‚æœæ˜¯CLIENT_TYPEä½¿ç”¨defæ–‡ä»¶æ¨¡å¼æˆ–è€…å°†å®šä¹‰æ”¾åœ¨ä¸€ä¸ªcommonçš„pyä¸­ï¼Œå› ä¸ºè¯¥æ¨¡å¼ç›¸å…³å®šä¹‰éƒ½åœ¨æœåŠ¡å™¨ä»£ç ä¸Šï¼Œè€Œå®¢æˆ·ç«¯ç¯å¢ƒæ²¡æœ‰æœåŠ¡å™¨ä»£ç 
 		if ((g_componentType == BOTS_TYPE || g_componentType == CLIENT_TYPE) && defContext.hasClient)
 		{
 			if (!updateScript(defContext))

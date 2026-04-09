@@ -21,9 +21,9 @@ namespace KBEngine {
 			}
 		}
 
-		// ��ʱ����NULL�� ��ΪsubmitCoroutine�������첽�ģ�
-		// ��Ҫ�ȴ��첽ִ����ɺ���ܷ��ؽ����
-		// δ�����ܻᴦ�����ؽ������app�����ͨ��Э�̷�ʽ����ͨ�š�
+		// 暂时返回NULL， 因为submitCoroutine函数是异步的，
+		// 需要等待异步执行完成后才能返回结果。
+		// 未来可能会处理返回结果，让app间可以通过协程方式进行通信。
 		return NULL;
 	}
 }

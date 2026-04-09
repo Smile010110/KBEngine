@@ -13,7 +13,7 @@ fi
 # 遍历子目录并查找 site-packages 目录
 for dir in $(find "$projectPath" -type d -name "site-packages"); do
     echo "VENV: $dir"
-    KBE_VENV_PATH="$KBE_VENV_PATH$dir;"
+    KBE_VENV_PATH="$KBE_VENV_PATH$dir"
 done
 
 #RES路径

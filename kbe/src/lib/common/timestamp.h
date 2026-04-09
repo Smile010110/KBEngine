@@ -7,9 +7,9 @@
 
 namespace KBEngine {
 
-// Ö¸Ê¾ÊÇ·ñ¿ÉÒÔÍ¨¹ıµ÷ÓÃRDTSC£¨Ê±¼ä´Á¼ÆÊıÆ÷£©
-// ¼ÆËãÊ±¼ä´Á¡£Ê¹ÓÃ´ËµÄºÃ´¦ÊÇ£¬ËüÄÜ¿ìËÙºÍ¾«È·µÄ·µ»ØÊµ¼ÊµÄÊ±ÖÓµÎ´ğ
-// ¡£²»×ãÖ®´¦ÊÇ£¬Õâ²¢²»Ê¹ÓÃSpeedStep¼¼ÊõÀ´¸Ä±äËûÃÇµÄÊ±ÖÓËÙ¶ÈµÄCPU¡£
+// æŒ‡ç¤ºæ˜¯å¦å¯ä»¥é€šè¿‡è°ƒç”¨RDTSCï¼ˆæ—¶é—´æˆ³è®¡æ•°å™¨ï¼‰
+// è®¡ç®—æ—¶é—´æˆ³ã€‚ä½¿ç”¨æ­¤çš„å¥½å¤„æ˜¯ï¼Œå®ƒèƒ½å¿«é€Ÿå’Œç²¾ç¡®çš„è¿”å›å®é™…çš„æ—¶é’Ÿæ»´ç­”
+// ã€‚ä¸è¶³ä¹‹å¤„æ˜¯ï¼Œè¿™å¹¶ä¸ä½¿ç”¨SpeedStepæŠ€æœ¯æ¥æ”¹å˜ä»–ä»¬çš„æ—¶é’Ÿé€Ÿåº¦çš„CPUã€‚
 #if KBE_PLATFORM == PLATFORM_UNIX
 	//#define KBE_USE_RDTSC
 #else // unix
@@ -18,7 +18,7 @@ namespace KBEngine {
 
 	enum KBETimingMethod
 	{
-		RDTSC_TIMING_METHOD, // ×ÔCPUÉÏµçÒÔÀ´Ëù¾­¹ıµÄÊ±ÖÓÖÜÆÚÊı,´ïµ½ÄÉÃë¼¶µÄ¼ÆÊ±¾«¶È
+		RDTSC_TIMING_METHOD, // è‡ªCPUä¸Šç”µä»¥æ¥æ‰€ç»è¿‡çš„æ—¶é’Ÿå‘¨æœŸæ•°,è¾¾åˆ°çº³ç§’çº§çš„è®¡æ—¶ç²¾åº¦
 		GET_TIME_OF_DAY_TIMING_METHOD,
 		GET_TIME_TIMING_METHOD,
 		NO_TIMING_METHOD,
@@ -30,21 +30,34 @@ namespace KBEngine {
 
 #if KBE_PLATFORM == PLATFORM_UNIX
 
-	inline uint64 timestamp_rdtsc()
+	// æ”¯æŒARM 
+	inline uint64_t timestamp_rdtsc()
 	{
-		uint32 rethi, retlo;
+	#if defined(__x86_64__) || defined(__i386__)
+		// x86/x64 åŸ rdtsc
+		uint32_t hi, lo;
 		__asm__ __volatile__(
-			"rdtsc":
-		"=d"    (rethi),
-			"=a"    (retlo)
-			);
-		return uint64(rethi) << 32 | retlo;
+			"rdtsc"
+			: "=d"(hi), "=a"(lo)
+		);
+		return (uint64_t(hi) << 32) | lo;
+
+	#elif defined(__aarch64__)
+		// ARM64 ä½¿ç”¨è™šæ‹Ÿè®¡æ•°å™¨
+		uint64_t cnt;
+		asm volatile("mrs %0, cntvct_el0" : "=r"(cnt));
+		return cnt;
+
+	#else
+		// å…¶ä»–å¹³å° fallback
+		return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+	#endif
 	}
 
-	// Ê¹ÓÃ gettimeofday. ²âÊÔ´ó¸Å±ÈRDTSC20±¶-600±¶¡£
-	// ´ËÍâ£¬ÓĞÒ»¸öÎÊÌâ
-	// 2.4ÄÚºËÏÂ£¬Á¬ĞøÁ½´Îµ÷ÓÃgettimeofdayµÄ¿ÉÄÜ
-	// ·µ»ØÒ»¸ö½á¹ûÊÇµ¹×Å×ß¡£
+	// ä½¿ç”¨ gettimeofday. æµ‹è¯•å¤§æ¦‚æ¯”RDTSC20å€-600å€ã€‚
+	// æ­¤å¤–ï¼Œæœ‰ä¸€ä¸ªé—®é¢˜
+	// 2.4å†…æ ¸ä¸‹ï¼Œè¿ç»­ä¸¤æ¬¡è°ƒç”¨gettimeofdayçš„å¯èƒ½
+	// è¿”å›ä¸€ä¸ªç»“æœæ˜¯å€’ç€èµ°ã€‚
 #include <sys/time.h>
 
 	inline uint64 timestamp_gettimeofday()

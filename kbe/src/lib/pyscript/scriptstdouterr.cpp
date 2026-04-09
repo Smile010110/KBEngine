@@ -26,24 +26,41 @@ ScriptStdOutErr::~ScriptStdOutErr()
 //-------------------------------------------------------------------------------------
 void ScriptStdOutErr::info_msg(const char* msg, uint32 msglen)
 {
-	sbuffer_ += msg;
+	//sbuffer_ += msg;
 
-	if(msg[0] == '\n')
+	//if(msg[0] == '\n')
+	//{
+	//	SCRIPT_INFO_MSG(sbuffer_);
+	//	sbuffer_ = "";
+	//}
+
+	sbuffer_.append(msg, msglen);
+
+	if (sbuffer_.find('\n') != std::string::npos)
 	{
 		SCRIPT_INFO_MSG(sbuffer_);
-		sbuffer_ = "";
+		sbuffer_.clear();
 	}
 }
 
 //-------------------------------------------------------------------------------------
 void ScriptStdOutErr::error_msg(const char* msg, uint32 msglen)
 {
-	sbuffer_ += msg;
+	//sbuffer_ += msg;
 
-	if(msg[0] == '\n')
+	//if(msg[0] == '\n')
+	//{
+	//	SCRIPT_ERROR_MSG(sbuffer_);
+	//	sbuffer_ = "";
+	//}
+
+
+	sbuffer_.append(msg, msglen);
+
+	if (sbuffer_.find('\n') != std::string::npos)
 	{
 		SCRIPT_ERROR_MSG(sbuffer_);
-		sbuffer_ = "";
+		sbuffer_.clear();
 	}
 }
 

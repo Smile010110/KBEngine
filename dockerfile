@@ -1,56 +1,69 @@
-FROM --platform=linux/amd64 ubuntu:20.04
+# 使用 Ubuntu 最新版作为基础镜像
+FROM ubuntu:latest
 
-# FROM --platform=linux/arm64 mdsol/ubuntu20:latest
-# --platform=x86-64
-# --platform=linux/amd64
-# --platform=arm64
-
-
-# RUN sed -i s:/archive.ubuntu.com:/mirrors.tuna.tsinghua.edu.cn/ubuntu:g /etc/apt/sources.list
-# RUN cat /etc/apt/sources.list
-# RUN apt-get clean
-
-RUN apt-get update  --fix-missing  && \
-apt-get install -y gcc g++ && \
-apt-get install -y make  && \
-apt-get install -y libssl-dev && \
-apt-get install -y libtirpc-dev  && \
-apt-get install -y libtool  && \
-apt-get install -y libmysqlclient-dev  && \
-apt-get install -y autoconf  && \
-apt-get install -y vim && \
-apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# RUN apt-get install -y software-properties-common
-# RUN add-apt-repository ppa:ubuntu-toolchain-r/test 
-
-
-# RUN apt-get update
-# RUN  apt-get  install  -y gcc build-essential
-
+# 设置环境变量
 ENV KBE_ROOT=/KBE
-ENV KBE_RES_PATH=${KBE_ROOT}/kbe/res/:${KBE_ROOT}/assets/:${KBE_ROOT}/assets/scripts/:${KBE_ROOT}/assets/res/
+ENV KBE_RES_PATH=${KBE_ROOT}/kbe/res/:${KBE_ROOT}/server_assets/:${KBE_ROOT}/server_assets/scripts/:${KBE_ROOT}/server_assets/res/
 ENV KBE_BIN_PATH=${KBE_ROOT}/kbe/bin/server/
 
 
+# 创建工作目录
+RUN mkdir -p /KBE
 
-RUN mkdir /KBE
+# 将当前目录内容复制进容器
 ADD . /KBE
 
-
-WORKDIR /KBE/kbe/src
-
-RUN make clean || true && make
-
+# 设置工作目录
 WORKDIR /KBE
 
-
-EXPOSE 20013
-EXPOSE 20015
-
-
-# ENTRYPOINT ["sh", "assets/start_server.sh"]
+# 运行编译脚本
+RUN sed -i 's/sudo //g' /KBE/install_linux.sh && bash /KBE/install_linux.sh
 
 
-# 定义容器启动后执行的命令
-# CMD ["bash", "-c", "chmod -R 775 assets && sh assets/start_server.sh"]
+# 清理编译缓存和不必要文件
+RUN rm -rf /KBE/kbe/src/build \
+           /root/kbe-vcpkg \
+           /tmp/* /var/tmp/*
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+
+# login base app  客户端通讯端口
+EXPOSE 20013-20025/tcp
+
+# base UDP 客户端通讯端口
+EXPOSE 20005-20009/udp
+
+# machine  接收广播端口
+EXPOSE 20086/tcp
+# machine  服务发现广播端口
+EXPOSE 20087/tcp
+# machine  对外提供 TCP 服务端口
+EXPOSE 20088/tcp
+
+
+# machine 客户端通讯端口
+EXPOSE 20099-20102/tcp
+
+
+#interfaces telnet
+EXPOSE 33000-33002/tcp
+
+#dbmgr telnet
+EXPOSE 32000/tcp
+
+#cellapp telnet
+EXPOSE 50000-50002/tcp
+
+# baseapp telnet
+EXPOSE 40000-40002/tcp
+
+#loginapp telnet
+EXPOSE 31000-31002/tcp
+
+#bots telnet
+EXPOSE 51000-51002/tcp
+
+
+WORKDIR /KBE/server_assets/scripts
+CMD ["sh", "-c", "mkdir -p ./logs && ( ./start_server.sh ) & sleep 2 && tail -F ./logs/*"]

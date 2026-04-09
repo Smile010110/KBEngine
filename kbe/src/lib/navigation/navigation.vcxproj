@@ -36,6 +36,8 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
+    <VCToolsVersion>
+    </VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -98,11 +100,22 @@
     <OutDir>../../libs\</OutDir>
     <IntDir>..\..\_objs\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestInstall>false</VcpkgManifestInstall>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgConfiguration>Debug</VcpkgConfiguration>
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies/log4cxx/src/main/include;../../lib/dependencies;../../lib/dependencies/fmt/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -132,7 +145,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies/log4cxx/src/main/include;../../lib/dependencies;../../lib/dependencies/fmt/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -144,6 +157,7 @@
       <XMLDocumentationFileName>$(IntDir)</XMLDocumentationFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -161,7 +175,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies/log4cxx/src/main/include;../../lib/dependencies;../../lib/dependencies/fmt/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -191,7 +205,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies/log4cxx/src/main/include;../../lib/dependencies;../../lib/dependencies/fmt/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../dependencies/g3dlite;../;../../common;../../lib/dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -203,6 +217,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -218,62 +233,16 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DetourAlloc.cpp" />
-    <ClCompile Include="DetourAssert.cpp" />
-    <ClCompile Include="DetourCommon.cpp" />
-    <ClCompile Include="DetourCrowd.cpp" />
-    <ClCompile Include="DetourLocalBoundary.cpp" />
-    <ClCompile Include="DetourNavMesh.cpp" />
-    <ClCompile Include="DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="DetourNavMeshQuery.cpp" />
-    <ClCompile Include="DetourNode.cpp" />
-    <ClCompile Include="DetourObstacleAvoidance.cpp" />
-    <ClCompile Include="DetourPathCorridor.cpp" />
-    <ClCompile Include="DetourPathQueue.cpp" />
-    <ClCompile Include="DetourProximityGrid.cpp" />
-    <ClCompile Include="DetourTileCache.cpp" />
-    <ClCompile Include="DetourTileCacheBuilder.cpp" />
     <ClCompile Include="navigation.cpp" />
     <ClCompile Include="navigation_handle.cpp" />
     <ClCompile Include="navigation_mesh_handle.cpp" />
     <ClCompile Include="navigation_tile_handle.cpp" />
-    <ClCompile Include="Recast.cpp" />
-    <ClCompile Include="RecastAlloc.cpp" />
-    <ClCompile Include="RecastArea.cpp" />
-    <ClCompile Include="RecastAssert.cpp" />
-    <ClCompile Include="RecastContour.cpp" />
-    <ClCompile Include="RecastFilter.cpp" />
-    <ClCompile Include="RecastLayers.cpp" />
-    <ClCompile Include="RecastMesh.cpp" />
-    <ClCompile Include="RecastMeshDetail.cpp" />
-    <ClCompile Include="RecastRasterization.cpp" />
-    <ClCompile Include="RecastRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DetourAlloc.h" />
-    <ClInclude Include="DetourAssert.h" />
-    <ClInclude Include="DetourCommon.h" />
-    <ClInclude Include="DetourCrowd.h" />
-    <ClInclude Include="DetourLocalBoundary.h" />
-    <ClInclude Include="DetourMath.h" />
-    <ClInclude Include="DetourNavMesh.h" />
-    <ClInclude Include="DetourNavMeshBuilder.h" />
-    <ClInclude Include="DetourNavMeshQuery.h" />
-    <ClInclude Include="DetourNode.h" />
-    <ClInclude Include="DetourObstacleAvoidance.h" />
-    <ClInclude Include="DetourPathCorridor.h" />
-    <ClInclude Include="DetourPathQueue.h" />
-    <ClInclude Include="DetourProximityGrid.h" />
-    <ClInclude Include="DetourStatus.h" />
-    <ClInclude Include="DetourTileCache.h" />
-    <ClInclude Include="DetourTileCacheBuilder.h" />
     <ClInclude Include="navigation.h" />
     <ClInclude Include="navigation_handle.h" />
     <ClInclude Include="navigation_mesh_handle.h" />
     <ClInclude Include="navigation_tile_handle.h" />
-    <ClInclude Include="Recast.h" />
-    <ClInclude Include="RecastAlloc.h" />
-    <ClInclude Include="RecastAssert.h" />
     <ClInclude Include="stlastar.h" />
     <ClInclude Include="stlstarfsa.h" />
   </ItemGroup>

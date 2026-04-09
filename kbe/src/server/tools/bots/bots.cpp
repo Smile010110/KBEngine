@@ -2,6 +2,7 @@
 
 #include "pybots.h"
 #include "bots.h"
+
 #include "clientobject.h"
 #include "server/telnet_server.h"
 #include "server/components.h"
@@ -28,6 +29,10 @@
 #include "../../../server/baseapp/baseapp_interface.h"
 #include "../../../server/loginapp/loginapp_interface.h"
 
+#include "../../server/tools/logger/logger_interface.h"
+
+#include "bots_active_report_handler.h"
+
 namespace KBEngine{
 
 //-------------------------------------------------------------------------------------
@@ -36,6 +41,7 @@ Bots::Bots(Network::EventDispatcher& dispatcher,
 			 COMPONENT_TYPE componentType,
 			 COMPONENT_ID componentID):
 ClientApp(dispatcher, ninterface, componentType, componentID),
+Components::ComponentsNotificationHandler(),
 pPyBots_(NULL),
 clients_(),
 reqCreateAndLoginTotalCount_(g_kbeSrvConfig.getBots().defaultAddBots_totalCount),
@@ -43,28 +49,37 @@ reqCreateAndLoginTickCount_(g_kbeSrvConfig.getBots().defaultAddBots_tickCount),
 reqCreateAndLoginTickTime_(g_kbeSrvConfig.getBots().defaultAddBots_tickTime),
 pCreateAndLoginHandler_(NULL),
 pEventPoller_(Network::EventPoller::create()),
-pTelnetServer_(NULL)
+pTelnetServer_(NULL),
+pActiveTimerHandle_(NULL)
 {
-	// ³õÊ¼»¯EntityDefÄ£¿é»ñÈ¡entityÊµÌåº¯ÊıµØÖ·
+	// åˆå§‹åŒ–EntityDefæ¨¡å—è·å–entityå®ä½“å‡½æ•°åœ°å€
 	EntityDef::setGetEntityFunc(std::tr1::bind(&Bots::tryGetEntity, this,
 		std::tr1::placeholders::_1, std::tr1::placeholders::_2));
 
 	KBEngine::Network::MessageHandlers::pMainMessageHandlers = &BotsInterface::messageHandlers;
 	Components::getSingleton().initialize(&ninterface, componentType, componentID);
+
+	pActiveTimerHandle_ = new BotsActiveReportHandler(this);
+	pActiveTimerHandle_->startActiveTick(KBE_MAX(1.f, Network::g_channelInternalTimeout / 2.0f));
+	
 }
 
 //-------------------------------------------------------------------------------------
 Bots::~Bots()
 {
 	Components::getSingleton().finalise();
+
+	SAFE_RELEASE(pActiveTimerHandle_);
 	SAFE_RELEASE(pEventPoller_);
 }
 
 //-------------------------------------------------------------------------------------
 bool Bots::initialize()
 {
-	// ¹ã²¥×Ô¼ºµÄµØÖ·¸øÍøÉÏÉÏµÄËùÓĞkbemachine
+	// å¹¿æ’­è‡ªå·±çš„åœ°å€ç»™ç½‘ä¸Šä¸Šçš„æ‰€æœ‰kbemachine
 	this->dispatcher().addTask(&Components::getSingleton());
+	Components::getSingleton().pHandler(this);
+
 	return ClientApp::initialize();
 }
 
@@ -98,7 +113,7 @@ bool Bots::initializeEnd()
 		return false;
 	}
 
-	// ËùÓĞ½Å±¾¶¼¼ÓÔØÍê±Ï
+	// æ‰€æœ‰è„šæœ¬éƒ½åŠ è½½å®Œæ¯•
 	PyObject* pyResult = PyObject_CallMethod(getEntryScript().get(), 
 										const_cast<char*>("onInit"), 
 										const_cast<char*>("i"), 
@@ -120,7 +135,7 @@ bool Bots::initializeEnd()
 //-------------------------------------------------------------------------------------
 void Bots::finalise()
 {
-	// ½áÊøÍ¨Öª½Å±¾
+	// ç»“æŸé€šçŸ¥è„šæœ¬
 	PyObject* pyResult = PyObject_CallMethod(getEntryScript().get(), 
 										const_cast<char*>("onFinish"),
 										const_cast<char*>(""));
@@ -181,7 +196,7 @@ bool Bots::installPyModules()
 	
 	APPEND_SCRIPT_MODULE_METHOD(getScript().getModule(), addBots, __py_addBots,	METH_VARARGS, 0);
 
-	// ×¢²áÉèÖÃ½Å±¾Êä³öÀàĞÍ
+	// æ³¨å†Œè®¾ç½®è„šæœ¬è¾“å‡ºç±»å‹
 	APPEND_SCRIPT_MODULE_METHOD(getScript().getModule(),	scriptLogType,	__py_setScriptLogType,	METH_VARARGS,	0)
 	if(PyModule_AddIntConstant(this->getScript().getModule(), "LOG_TYPE_NORMAL", log4cxx::ScriptLevel::SCRIPT_INT))
 	{
@@ -211,7 +226,7 @@ bool Bots::installPyModules()
 	registerScript(client::Entity::getScriptType());
 	registerScript(EntityComponent::getScriptType());
 
-	// °²×°Èë¿ÚÄ£¿é
+	// å®‰è£…å…¥å£æ¨¡å—
 	PyObject *entryScriptFileName = PyUnicode_FromString(g_kbeSrvConfig.getBots().entryScriptFile);
 	if(entryScriptFileName != NULL)
 	{
@@ -238,6 +253,28 @@ bool Bots::installPyModules()
 	return true;
 }
 
+
+
+void Bots::onAddComponent(const Components::ComponentInfos* pInfos) {
+	if (pInfos->componentType == LOGGER_TYPE)
+	{
+		DebugHelper::getSingleton().registerLogger(LoggerInterface::writeLog.msgID, pInfos->pIntAddr.get());
+	}
+}
+void Bots::onRemoveComponent(const Components::ComponentInfos* pInfos) {
+	if (pInfos->componentType == LOGGER_TYPE)
+	{
+		DebugHelper::getSingleton().unregisterLogger(LoggerInterface::writeLog.msgID, pInfos->pIntAddr.get());
+	}
+}
+void Bots::onIdentityillegal(COMPONENT_TYPE componentType, COMPONENT_ID componentID, uint32 pid, const char* pAddr)
+{
+	ERROR_MSG(fmt::format("ServerApp::onIdentityillegal: The current process and {}(componentID={} ->conflicted???, pid={}, addr={}) conflict, the process will exit!\n"
+		"Can modify the components-CID and UID to avoid conflict.\n",
+		COMPONENT_NAME_EX((COMPONENT_TYPE)componentType), componentID, pid, pAddr));
+
+	this->shutDown();
+}
 //-------------------------------------------------------------------------------------
 bool Bots::uninstallPyModules()
 {
@@ -484,7 +521,7 @@ void Bots::onExecScriptCommand(Network::Channel* pChannel, KBEngine::MemoryStrea
 
 	if(getScript().run_simpleString(PyBytes_AsString(pycmd1), &retbuf) == 0)
 	{
-		// ½«½á¹û·µ»Ø¸ø¿Í»§¶Ë
+		// å°†ç»“æœè¿”å›ç»™å®¢æˆ·ç«¯
 		Network::Bundle* pBundle = Network::Bundle::createPoolObject(OBJECTPOOL_POINT);
 		ConsoleInterface::ConsoleExecCommandCBMessageHandler msgHandler;
 		(*pBundle).newMessage(msgHandler);
@@ -552,12 +589,15 @@ ClientObject* Bots::findClientByAppID(int32 appID)
 //-------------------------------------------------------------------------------------
 void Bots::onAppActiveTick(Network::Channel* pChannel, COMPONENT_TYPE componentType, COMPONENT_ID componentID)
 {
+	/*DEBUG_MSG(fmt::format("Bots::onAppActiveTick[{:p}]: {}:{} lastReceivedTime:{} at {}.\n",
+		(void*)pChannel, COMPONENT_NAME_EX(componentType), componentID, pChannel->lastReceivedTime(), pChannel->c_str()));*/
+
+
 	if(componentType != CLIENT_TYPE)
 		if(pChannel->isExternal())
 			return;
 	
-	Network::Channel* pTargetChannel = NULL;
-	if(componentType != CONSOLE_TYPE && componentType != CLIENT_TYPE)
+	if(componentType != CONSOLE_TYPE && componentType != CLIENT_TYPE )
 	{
 		Components::ComponentInfos* cinfos = 
 			Components::getSingleton().findComponent(componentType, KBEngine::getUserUID(), componentID);
@@ -570,17 +610,14 @@ void Bots::onAppActiveTick(Network::Channel* pChannel, COMPONENT_TYPE componentT
 			return;
 		}
 
-		pTargetChannel = cinfos->pChannel;
-		pTargetChannel->updateLastReceivedTime();
+		cinfos->pChannel->updateLastReceivedTime();
+
 	}
 	else
 	{
 		pChannel->updateLastReceivedTime();
-		pTargetChannel = pChannel;
 	}
 
-	//DEBUG_MSG(fmt::format("Bots::onAppActiveTick[:p]: {}:{} lastReceivedTime:{} at {}.\n",
-	//	(void*)pChannel, COMPONENT_NAME_EX(componentType), componentID, pChannel->lastReceivedTime(), pChannel->c_str()));
 }
 
 //-------------------------------------------------------------------------------------

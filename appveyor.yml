@@ -7,10 +7,14 @@ branches:
 
 os:
   - Visual Studio 2022
+  # - Ubuntu2204 #Build execution time has reached the maximum allowed time for your plan (60 minutes).
 
 environment:
   matrix:
-  - TOOLSET: vs2022
+    - TOOLSET: vs2022
 
-build:
-  project: kbe/src/kbengine nex.sln
+# 自定义构建步骤
+build_script:
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2022" call install_windows.bat
+  - sh: if [ "$APPVEYOR_BUILD_WORKER_IMAGE" = "Ubuntu2204" ]; then bash install_linux.sh; fi
+

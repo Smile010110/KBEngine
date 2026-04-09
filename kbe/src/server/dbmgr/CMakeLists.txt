@@ -1,0 +1,69 @@
+
+# 收集源文件
+set(SRCS
+	buffered_dbtasks.cpp
+	dbmgr.cpp
+	dbmgr_interface.cpp
+	dbtasks.cpp
+	entity_component.cpp
+	interfaces_handler.cpp
+	main.cpp
+	profile.cpp
+	sync_app_datas_handler.cpp
+	update_dblog_handler.cpp
+)
+
+# 创建可执行程序
+add_executable(dbmgr ${SRCS})
+
+
+
+# link_directories(${KBE_ROOT}/kbe/src/build/vcpkg_installed/x64-linux/lib)
+
+# 链接依赖的库
+target_link_libraries(dbmgr
+    PRIVATE
+		db_interface
+		db_mongodb
+		db_mysql
+        server
+        resmgr
+        entitydef
+        network
+        thread
+        pyscript
+        common
+        helper
+        math
+        g3dlite
+        log4cxx
+
+)
+include_directories(
+    ${KBE_ROOT}/kbe/src/lib/dependencies/hiredis
+)
+
+# 调用 mysql_config 获取需要的 flags
+execute_process(
+	COMMAND /usr/bin/mysql_config --libs_r
+	OUTPUT_VARIABLE MYSQL_LIBS
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+# 添加到 dbmgr
+separate_arguments(MYSQL_LIBS UNIX_COMMAND "${MYSQL_LIBS}")
+target_link_libraries(dbmgr PRIVATE ${MYSQL_LIBS})
+
+target_compile_definitions(dbmgr PUBLIC  LOG4CXX_STATIC)
+
+# ---------------- Python ----------------
+target_link_libraries(dbmgr PRIVATE python_interface)
+target_link_options(dbmgr PRIVATE -Wl,-export-dynamic)
+
+# ---------------- OpenSSL ----------------
+target_link_libraries(dbmgr PRIVATE KBEOpenSSL::SSL)
+
+
+# 设置可执行文件输出目录
+set_target_properties(dbmgr PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${KBE_ROOT}/kbe/bin/server"
+)

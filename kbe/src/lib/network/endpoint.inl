@@ -214,8 +214,8 @@ INLINE int EndPoint::close()
 	if (socket_ == invalidSocket)
 		return 0;
 
-	// UDPÄ£Ê½ÏÂ£¬ socketÊÇ·þÎñÆ÷listenµÄfd
-	// socketÎªÒýÓÃÄ£Ê½
+	// UDPæ¨¡å¼ä¸‹ï¼Œ socketæ˜¯æœåŠ¡å™¨listençš„fd
+	// socketä¸ºå¼•ç”¨æ¨¡å¼
 	if (isRefSocket_)
 	{
 		this->setFileDescriptor(invalidSocket);
