@@ -11,12 +11,21 @@
 #include "db_interface/db_interface.h"
 #include "db_interface/entity_table.h"
 #include "network/fixed_messages.h"
+#include <limits>
 
 #ifndef CODE_INLINE
 #include "entity_table_mysql.inl"
 #endif
 
 namespace KBEngine { 
+namespace
+{
+inline unsigned long toMysqlLength(size_t v)
+{
+	KBE_ASSERT(v <= static_cast<size_t>(std::numeric_limits<unsigned long>::max()));
+	return static_cast<unsigned long>(v);
+}
+}
 
 // 同步成功时回调
 typedef void (*onSyncItemToDBSuccessPtr)(DBInterface*, const char*, const char*);
@@ -1887,7 +1896,7 @@ void EntityTableItemMysql_STRING::getWriteSqlItem(DBInterface* pdbi,
 	memset(tbuf, 0, val.size() * 2 + 1);
 
 	mysql_real_escape_string(static_cast<DBInterfaceMysql*>(pdbi)->mysql(), 
-		tbuf, val.c_str(), val.size());
+		tbuf, val.c_str(), toMysqlLength(val.size()));
 
 	pSotvs->extraDatas += tbuf;
 	pSotvs->extraDatas += "\"";
@@ -1958,7 +1967,7 @@ void EntityTableItemMysql_UNICODE::getWriteSqlItem(DBInterface* pdbi, MemoryStre
 	memset(tbuf, 0, val.size() * 2 + 1);
 
 	mysql_real_escape_string(static_cast<DBInterfaceMysql*>(pdbi)->mysql(), 
-		tbuf, val.c_str(), val.size());
+		tbuf, val.c_str(), toMysqlLength(val.size()));
 	
 	pSotvs->extraDatas = "\"";
 	pSotvs->extraDatas += tbuf;
@@ -1994,7 +2003,8 @@ void EntityTableItemMysql_BLOB::addToStream(MemoryStream* s, mysql::DBContext& c
 	std::pair< std::vector<std::string>::size_type, std::vector<std::string> >& resultDatas = context.results[resultDBID];
 	std::string& datas = resultDatas.second[resultDatas.first++];
 
-	s->appendBlob(datas.data(), datas.size());
+	KBE_ASSERT(datas.size() <= static_cast<size_t>(std::numeric_limits<KBEngine::ArraySize>::max()));
+	s->appendBlob(datas.data(), static_cast<KBEngine::ArraySize>(datas.size()));
 }
 
 //-------------------------------------------------------------------------------------
@@ -2012,7 +2022,7 @@ void EntityTableItemMysql_BLOB::getWriteSqlItem(DBInterface* pdbi, MemoryStream*
 	memset(tbuf, 0, val.size() * 2 + 1);
 
 	mysql_real_escape_string(static_cast<DBInterfaceMysql*>(pdbi)->mysql(), 
-		tbuf, val.data(), val.size());
+		tbuf, val.data(), toMysqlLength(val.size()));
 
 	pSotvs->extraDatas = "\"";
 	pSotvs->extraDatas += tbuf;
@@ -2066,7 +2076,7 @@ void EntityTableItemMysql_PYTHON::getWriteSqlItem(DBInterface* pdbi, MemoryStrea
 	memset(tbuf, 0, val.size() * 2 + 1);
 
 	mysql_real_escape_string(static_cast<DBInterfaceMysql*>(pdbi)->mysql(), 
-		tbuf, val.c_str(), val.size());
+		tbuf, val.c_str(), toMysqlLength(val.size()));
 
 	pSotvs->extraDatas = "\"";
 	pSotvs->extraDatas += tbuf;
