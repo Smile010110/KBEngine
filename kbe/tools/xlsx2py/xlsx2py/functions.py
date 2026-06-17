@@ -100,25 +100,17 @@ def funcTupleFloat(mapDict, dctData, chilidDict, data):
 
 def funcDict(mapDict, dctData, chilidDict, data):
     """
-    "1:2`3`4;2:5`6"
-    -> {1: ('2','3','4'), 2: ('5','6')}
+    "{1:2,3:[1,2,3],"hello":3}"
+    -> {1:2,3:[1,2,3],"hello":3}
     """
     if _is_empty(data):
-        return ""
+        return {}
 
     text = str(data)
-    dict1 = {}
-    for item in text.split(";"):
-        item = item.strip()
-        if not item:
-            continue
-
-        e = item.split(":", 1)
-        if len(e) == 1:
-            dict1[int(e[0])] = ()
-        elif len(e) == 2:
-            dict1[int(e[0])] = tuple(index for index in e[1].split("`") if index != "")
-    return dict1
+    try:
+        return _safe_literal_eval(text, {})
+    except Exception as e:
+        return {}
 
 
 def funcTupleStr(mapDict, dctData, chilidDict, data):
