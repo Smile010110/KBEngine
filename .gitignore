@@ -213,3 +213,7 @@ base_assets
 #/kbe/tools/server/webconsole/webconsole/migrations/
 #/kbe/tools/server/webconsole/cluster/migrations/
 #/kbe/tools/server/webconsole/component/migrations/
+.claude
+CLAUDE.md
+SOUL.md
+USER.md
