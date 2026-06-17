@@ -46,12 +46,12 @@ KBEngineApp::KBEngineApp() :
 	clientVersion_(KBTEXT("")),
 	serverScriptVersion_(KBTEXT("")),
 	clientScriptVersion_(KBTEXT("")),
-	serverProtocolMD5_(KBTEXT("EB8AE9F114C8797B1E70E1A629686A27")),
-	serverEntitydefMD5_(KBTEXT("46596D3750651E9F679C7775CD577E35")),
+	serverProtocolMD5_(KBTEXT("@{KBE_SERVER_PROTO_MD5}")),
+	serverEntitydefMD5_(KBTEXT("@{KBE_SERVER_ENTITYDEF_MD5}")),
 	entity_uuid_(0),
 	entity_id_(0),
 	entity_type_(KBTEXT("")),
-	useAliasEntityID_(true),
+	useAliasEntityID_(@{KBE_USE_ALIAS_ENTITYID}),
 	controlledEntities_(),
 	entityServerPos_(),
 	spacedatas_(),
@@ -93,12 +93,12 @@ KBEngineApp::KBEngineApp(KBEngineArgs* pArgs):
 	clientVersion_(KBTEXT("")),
 	serverScriptVersion_(KBTEXT("")),
 	clientScriptVersion_(KBTEXT("")),
-	serverProtocolMD5_(KBTEXT("EB8AE9F114C8797B1E70E1A629686A27")),
-	serverEntitydefMD5_(KBTEXT("46596D3750651E9F679C7775CD577E35")),
+	serverProtocolMD5_(KBTEXT("@{KBE_SERVER_PROTO_MD5}")),
+	serverEntitydefMD5_(KBTEXT("@{KBE_SERVER_ENTITYDEF_MD5}")),
 	entity_uuid_(0),
 	entity_id_(0),
 	entity_type_(KBTEXT("")),
-	useAliasEntityID_(true),
+	useAliasEntityID_(@{KBE_USE_ALIAS_ENTITYID}),
 	controlledEntities_(),
 	entityServerPos_(),
 	spacedatas_(),
@@ -258,9 +258,9 @@ void KBEngineApp::reset()
 	serverdatas_.Clear();
 
 	serverVersion_ = KBTEXT("");
-	clientVersion_ = KBTEXT("2.8.1");
+	clientVersion_ = KBTEXT("@{KBE_VERSION}");
 	serverScriptVersion_ = KBTEXT("");
-	clientScriptVersion_ = KBTEXT("0.1.0");
+	clientScriptVersion_ = KBTEXT("@{KBE_SCRIPT_VERSION}");
 
 	entity_uuid_ = 0;
 	entity_id_ = 0;
@@ -981,27 +981,40 @@ void KBEngineApp::Client_onCreatedProxies(uint64 rndUUID, int32 eid, KBString& e
 		ScriptModule* pModule = *pModuleFind;
 
 		Entity* pEntity = pModule->createEntity();
+		if (!pEntity)
+		{
+			SCREEN_ERROR_MSG("KBEngineApp::Client_onCreatedProxies(): createEntity() failed! entityType(%s)", entityType.c_str());
+			return;
+		}
 		pEntity->id(eid);
 		pEntity->className(entityType);
 		pEntity->onGetBase();
 
-		entities_.Add(eid, pEntity);
-
-		MemoryStream** entityMessageFind = bufferedCreateEntityMessages_.Find(eid);
-		if (entityMessageFind)
+		try
 		{
-			MemoryStream* entityMessage = *entityMessageFind;
-			Client_onUpdatePropertys(*entityMessage);
-			bufferedCreateEntityMessages_.Remove(eid);
-			MemoryStream::reclaimObject(entityMessage);
+			entities_.Add(eid, pEntity);
+
+			MemoryStream** entityMessageFind = bufferedCreateEntityMessages_.Find(eid);
+			if (entityMessageFind)
+			{
+				MemoryStream* entityMessage = *entityMessageFind;
+				Client_onUpdatePropertys(*entityMessage);
+				bufferedCreateEntityMessages_.Remove(eid);
+				MemoryStream::reclaimObject(entityMessage);
+			}
+
+			pEntity->__init__();
+			pEntity->attachComponents();
+			pEntity->inited(true);
+
+			if (pArgs_->isOnInitCallPropertysSetMethods)
+				pEntity->callPropertysSetMethods();
 		}
-
-		pEntity->__init__();
-		pEntity->attachComponents();
-		pEntity->inited(true);
-
-		if (pArgs_->isOnInitCallPropertysSetMethods)
-			pEntity->callPropertysSetMethods();
+		catch (...)
+		{
+			SCREEN_ERROR_MSG("KBEngineApp::Client_onCreatedProxies(): init entity failed! eid(%d), entityType(%s)", eid, entityType.c_str());
+			pEntity->destroy();
+		}
 	}
 	else
 	{
@@ -1593,28 +1606,41 @@ void KBEngineApp::Client_onEntityEnterWorld(MemoryStream& stream)
 		ScriptModule* pModule = *pScriptModuleFind;
 
 		Entity* pEntity = pModule->createEntity();
+		if (!pEntity)
+		{
+			SCREEN_ERROR_MSG("KBEngineApp::Client_onEntityEnterWorld(): createEntity() failed! entityType(%s)", entityType.c_str());
+			return;
+		}
 		pEntity->id(eid);
 		pEntity->className(entityType);
 		pEntity->onGetCell();
 
-		entities_.Add(eid, pEntity);
+		try
+		{
+			entities_.Add(eid, pEntity);
 
-		Client_onUpdatePropertys(*(*entityMessageFind));
-		MemoryStream::reclaimObject((*entityMessageFind));
-		bufferedCreateEntityMessages_.Remove(eid);
+			Client_onUpdatePropertys(*(*entityMessageFind));
+			MemoryStream::reclaimObject((*entityMessageFind));
+			bufferedCreateEntityMessages_.Remove(eid);
 
-		pEntity->isOnGround(isOnGround > 0);
-		pEntity->onDirectionChanged(pEntity->direction);
-		pEntity->onPositionChanged(pEntity->position);
+			pEntity->isOnGround(isOnGround > 0);
+			pEntity->onDirectionChanged(pEntity->direction);
+			pEntity->onPositionChanged(pEntity->position);
 
-		pEntity->__init__();
-		pEntity->attachComponents();
-		pEntity->inited(true);
-		pEntity->inWorld(true);
-		pEntity->enterWorld();
+			pEntity->__init__();
+			pEntity->attachComponents();
+			pEntity->inited(true);
+			pEntity->inWorld(true);
+			pEntity->enterWorld();
 
-		if (pArgs_->isOnInitCallPropertysSetMethods)
-			pEntity->callPropertysSetMethods();
+			if (pArgs_->isOnInitCallPropertysSetMethods)
+				pEntity->callPropertysSetMethods();
+		}
+		catch (...)
+		{
+			SCREEN_ERROR_MSG("KBEngineApp::Client_onEntityEnterWorld(): init entity failed! eid(%d), entityType(%s)", eid, entityType.c_str());
+			pEntity->destroy();
+		}
 	}
 	else
 	{

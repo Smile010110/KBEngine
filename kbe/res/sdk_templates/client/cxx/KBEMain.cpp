@@ -1,5 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿
 #include "KBEMain.h"
 #include "KBEngine.h"
 #include "KBEngineArgs.h"
@@ -11,7 +10,7 @@
 
 KBEMain::KBEMain()
 {
-	ip = TEXT("127.0.0.1");
+	ip = KBTEXT("127.0.0.1");
 	port = @{KBE_LOGIN_PORT};
 	syncPlayerMS = 1000 / @{KBE_UPDATEHZ};
 	useAliasEntityID = @{KBE_USE_ALIAS_ENTITYID};
@@ -57,38 +56,14 @@ bool KBEMain::init()
 		return false;
 	}
 
-	// installEvents();
-
 	return true;
 }
-
-
-// void KBEMain::installEvents()
-// {
-// 	KBENGINE_REGISTER_EVENT(KBEngine::KBEventTypes::onScriptVersionNotMatch, onScriptVersionNotMatch);
-// 	KBENGINE_REGISTER_EVENT(KBEngine::KBEventTypes::onVersionNotMatch, onVersionNotMatch);
-// }
-
-// void KBEMain::deregisterEvents()
-// {
-// 	KBENGINE_DEREGISTER_EVENT(KBEngine::KBEventTypes::onScriptVersionNotMatch);
-// 	KBENGINE_DEREGISTER_EVENT(KBEngine::KBEventTypes::onVersionNotMatch);
-// }
-
-// void KBEMain::onVersionNotMatch(std::shared_ptr<UKBEventData> pEventData)
-// {
-// }
-
-// void KBEMain::onScriptVersionNotMatch(std::shared_ptr<UKBEventData> pEventData)
-// {
-// }
-
 
 
 KBString KBEMain::getClientVersion()
 {
 	if (!KBEngine::KBEngineApp::getSingleton().isInitialized())
-		return TEXT("");
+		return KBTEXT("");
 
 	return KBEngine::KBEngineApp::getSingleton().clientVersion();
 }
@@ -96,7 +71,7 @@ KBString KBEMain::getClientVersion()
 KBString KBEMain::getClientScriptVersion()
 {
 	if (!KBEngine::KBEngineApp::getSingleton().isInitialized())
-		return TEXT("");
+		return KBTEXT("");
 
 	return KBEngine::KBEngineApp::getSingleton().clientScriptVersion();
 }
@@ -104,7 +79,7 @@ KBString KBEMain::getClientScriptVersion()
 KBString KBEMain::getServerVersion()
 {
 	if (!KBEngine::KBEngineApp::getSingleton().isInitialized())
-		return TEXT("");
+		return KBTEXT("");
 
 	return KBEngine::KBEngineApp::getSingleton().serverVersion();
 }
@@ -112,7 +87,7 @@ KBString KBEMain::getServerVersion()
 KBString KBEMain::getServerScriptVersion()
 {
 	if (!KBEngine::KBEngineApp::getSingleton().isInitialized())
-		return TEXT("");
+		return KBTEXT("");
 
 	return KBEngine::KBEngineApp::getSingleton().serverScriptVersion();
 }
@@ -120,7 +95,7 @@ KBString KBEMain::getServerScriptVersion()
 KBString KBEMain::getComponentName()
 {
 	if (!KBEngine::KBEngineApp::getSingleton().isInitialized())
-		return TEXT("");
+		return KBTEXT("");
 
 	return KBEngine::KBEngineApp::getSingleton().component();
 }
