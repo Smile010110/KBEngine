@@ -701,12 +701,18 @@ const char* DBInterfaceMysql::c_str()
 //-------------------------------------------------------------------------------------
 const char* DBInterfaceMysql::getstrerror()
 {
+	if (!pMysql_)
+		return "database connection is not attached";
+
 	return mysql_error(pMysql_);
 }
 
 //-------------------------------------------------------------------------------------
 int DBInterfaceMysql::getlasterror()
 {
+	if (!pMysql_)
+		return 0;
+
 	return mysql_errno(pMysql_);
 }
 
@@ -760,16 +766,22 @@ void DBInterfaceMysql::getFields(TABLE_FIELDS& outs, const char* tableName)
 //-------------------------------------------------------------------------------------
 bool DBInterfaceMysql::lock()
 {
-	lock_.start();
-	return true;
+	if (!pMysql_ && !reattach())
+		return false;
+
+	return lock_.start();
 }
 
 //-------------------------------------------------------------------------------------
 bool DBInterfaceMysql::unlock()
 {
-	lock_.commit();
-	lock_.end();
-	return true;
+	return lock_.commit();
+}
+
+//-------------------------------------------------------------------------------------
+bool DBInterfaceMysql::rollback()
+{
+	return lock_.rollback();
 }
 
 //-------------------------------------------------------------------------------------
@@ -795,7 +807,13 @@ void DBInterfaceMysql::throwError(DBException* pDBException)
 //-------------------------------------------------------------------------------------
 bool DBInterfaceMysql::processException(std::exception & e)
 {
-	DBException* dbe = static_cast<DBException*>(&e);
+	DBException* dbe = dynamic_cast<DBException*>(&e);
+	if (!dbe)
+	{
+		ERROR_MSG(fmt::format("DBInterfaceMysql::processException: unsupported exception: {}\n", e.what()));
+		return false;
+	}
+
 	bool retry = false;
 
 	if (dbe->isLostConnection())
@@ -847,7 +865,7 @@ bool DBInterfaceMysql::processException(std::exception & e)
 }
 
 //-------------------------------------------------------------------------------------
-const char* DBInterfaceMysql::getAutoIncrementInit()
+const char* DBInterfaceMysql::getAutoIncrementInit() const
 {
 	DBInterfaceInfo* pDBInfo = g_kbeSrvConfig.dbInterface(name());
 	if (!pDBInfo)
@@ -859,6 +877,17 @@ const char* DBInterfaceMysql::getAutoIncrementInit()
 	}
 
 	return pDBInfo->db_autoIncrementInit;
+}
+
+//-------------------------------------------------------------------------------------
+bool DBInterfaceMysql::isAutoIncrementDBID() const
+{
+	DBInterfaceInfo* pDBInfo = g_kbeSrvConfig.dbInterface(name());
+	if (!pDBInfo)
+		return true;
+
+	// idType 设置为 UUID64 时使用UUID，否则自增
+	return strcmp(pDBInfo->db_idType, "UUID64") != 0;
 }
 
 //-------------------------------------------------------------------------------------

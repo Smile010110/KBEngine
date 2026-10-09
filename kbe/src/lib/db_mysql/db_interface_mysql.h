@@ -70,9 +70,10 @@ public:
 	virtual bool attach(const char* databaseName = NULL);
 	virtual bool detach();
 
-	bool ping(){ 
-		return mysql_ping(pMysql_) == 0; 
+	bool ping(){
+		return mysql_ping(pMysql_) == 0;
 	}
+	bool inTransaction() const { return inTransaction_; }
 
 	void inTransaction(bool value)
 	{
@@ -171,6 +172,7 @@ public:
 	*/
 	virtual bool lock();
 	virtual bool unlock();
+	virtual bool rollback();
 
 	/**
 		处理异常
@@ -185,7 +187,12 @@ public:
 	/**
 		获得自增起始id
 	*/
-	virtual const char* getAutoIncrementInit();
+	virtual const char* getAutoIncrementInit() const;
+
+	/**
+		是否为自动增长id
+	*/
+	bool isAutoIncrementDBID() const;
 
 protected:
 	MYSQL* pMysql_;

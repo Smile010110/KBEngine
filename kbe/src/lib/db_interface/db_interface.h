@@ -149,6 +149,7 @@ public:
 	*/
 	virtual bool lock() = 0;
 	virtual bool unlock() = 0;
+	virtual bool rollback() { return true; }
 
 	/**
 		处理异常
@@ -163,7 +164,7 @@ public:
 	/**
 		获得自增起始id
 	*/
-	virtual  const char* getAutoIncrementInit() { return NULL; }
+	virtual  const char* getAutoIncrementInit() const { return NULL; }
 
 protected:
 	char name_[MAX_BUF];									// 数据库接口的名称
