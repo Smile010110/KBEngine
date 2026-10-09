@@ -569,6 +569,30 @@ bool DBInterfacePostgresql::unlock()
 	return false;
 }
 
+// 回滚事务时不向外抛异常，避免覆盖原始数据库错误。
+bool DBInterfacePostgresql::rollback()
+{
+	if (!inTransaction_)
+		return true;
+
+	bool success = false;
+	try
+	{
+		success = query(std::string("ROLLBACK"), false);
+	}
+	catch (std::exception& e)
+	{
+		WARNING_MSG(fmt::format("DBInterfacePostgresql::rollback: rollback exception, error={}\n", e.what()));
+	}
+	catch (...)
+	{
+		WARNING_MSG("DBInterfacePostgresql::rollback: unknown rollback exception.\n");
+	}
+
+	inTransaction_ = false;
+	return success;
+}
+
 // 处理 PostgreSQL 异常，断线时重连，可重试错误交回 DB 任务队列重跑。
 bool DBInterfacePostgresql::processException(std::exception& e)
 {
@@ -586,10 +610,21 @@ bool DBInterfacePostgresql::processException(std::exception& e)
 }
 
 // 返回 dbmgr 配置里的自增初始值。
-const char* DBInterfacePostgresql::getAutoIncrementInit()
+const char* DBInterfacePostgresql::getAutoIncrementInit() const
 {
 	DBInterfaceInfo* pDBInfo = g_kbeSrvConfig.dbInterface(name());
 	return pDBInfo ? pDBInfo->db_autoIncrementInit : NULL;
+}
+
+//-------------------------------------------------------------------------------------
+bool DBInterfacePostgresql::isAutoIncrementDBID() const
+{
+	DBInterfaceInfo* pDBInfo = g_kbeSrvConfig.dbInterface(name());
+	if (!pDBInfo)
+		return true;
+
+	// idType 设置为 UUID64 时使用UUID，否则自增
+	return strcmp(pDBInfo->db_idType, "UUID64") != 0;
 }
 
 // 转义 SQL 字符串字面量内容。
